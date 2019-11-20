@@ -51,16 +51,39 @@
     <div class="uk-section uk-section-secondary">
         <div style="max-width: 600px; margin: auto;">
             <h1 class="uk-width-1-1@m uk-text-center uk-margin-auto uk-margin-auto-vertical uk-heading-medium">Get Advice</h1>
-            {% if messages %}
-            <ul class="messages">
-                {% for message in messages %}
-                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}> {{ message }}</li>
+
+            <form method="post" class="uk-form-horizontal uk-margin-large">
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                  <div class="uk-margin">
+                    {% for err in form.non_field_errors %}
+                        <div class="uk-alert-danger" uk-alert>
+                            <a class="uk-alert-close" uk-close></a>
+                            <p>{{ err }}</p>
+                        </div>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+
+                {% for hidden_field in form.hidden_fields %}
+                    {{ hidden_field.errors }}
+                    {{ hidden_field }}
                 {% endfor %}
-            </ul>
-            {% endif %}
-            <form method="post">{% csrf_token %}
-                {{ form.as_p }}
-                <input type="submit" value="Send message">
+
+                {% for field in form.visible_fields %}
+                <div class="uk-margin">
+                    <label class="uk-form-label">{{ field.label_tag }}</label>
+                    <div class="uk-form-controls">
+                        {{ field.errors }}
+                        {{ field }}
+                        {{ field.help_text }}
+                    </div>
+                </div>
+                {% endfor %}
+                <div class="uk-margin">
+                    <input class="uk-button uk-button-primary" type="submit" value="Submit">
+                </div>
             </form>
         </div>
     </div>

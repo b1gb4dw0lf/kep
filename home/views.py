@@ -4,7 +4,7 @@ from .forms import CostForm
 
 
 class IndexView(SuccessMessageMixin, FormView):
-    template_name = 'index.html'
+    template_name = 'home.html'
     form_class = CostForm
     success_url = '/'
     success_message = 'Submission Successful'
