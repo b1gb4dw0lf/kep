@@ -4,6 +4,7 @@ from django_countries.data import COUNTRIES
 
 CHOICES = tuple([(u'', '----------')] + sorted(COUNTRIES.items()))
 
+
 class HomeUserForm(Form):
     error_css_class = 'uk-form-danger'
     min_budget = forms.DecimalField(label='Min Budget', required=False, widget=forms.TextInput(attrs={
@@ -14,19 +15,17 @@ class HomeUserForm(Form):
         'class': 'uk-input',
         'placeholder': 'Enter maximum budget range'
     }))
-    postcode = forms.DecimalField(label='Postcode', required=False, widget=forms.TextInput(attrs={
+    postcode = forms.CharField(label='Postcode', required=False, widget=forms.TextInput(attrs={
         'class': 'uk-input',
         'placeholder': 'Enter your postcode'
     }))
-    country = forms.ChoiceField(choices=CHOICES,
-                                widget=forms.Select(attrs={'class': 'uk-select'}))
+    country = forms.ChoiceField(choices=CHOICES, widget=forms.Select(attrs={'class': 'uk-select'}))
     electricity = forms.DecimalField(required=False, widget=forms.TextInput(attrs={
         'class': 'uk-input',
         'placeholder': 'Enter your electricity need'
     }))
     grid_type = forms.ChoiceField(choices=[(0, 'On-Grid'), (1, 'Off-Grid')],
-                                  widget=forms.Select(attrs={'class': 'uk-select'}),
-                                  required=False)
+                                  widget=forms.Select(attrs={'class': 'uk-select'}))
 
 
 class CommercialUserForm(Form):
@@ -47,7 +46,7 @@ class CommercialUserForm(Form):
         'class': 'uk-input',
         'placeholder': 'Enter maximum temperature'
     }))
-    postcode = forms.DecimalField(label='Postcode', required=False, widget=forms.TextInput(attrs={
+    postcode = forms.CharField(label='Postcode', widget=forms.TextInput(attrs={
         'class': 'uk-input',
         'placeholder': 'Enter your postcode'
     }))
@@ -61,7 +60,7 @@ class CommercialUserForm(Form):
         'class': 'uk-input',
         'placeholder': 'Enter area of the land'
     }))
-    materials = forms.ChoiceField(choices=[(0, None), (1, 'Material 1'), (2, 'Material 2'), (3, 'Material 3')],
+    materials = forms.ChoiceField(choices=[('', '----------'), (1, 'Material 1'), (2, 'Material 2'), (3, 'Material 3')],
                                   widget=forms.Select(attrs={'class': 'uk-select'}), required=False)
     electricity = forms.DecimalField(required=False, widget=forms.TextInput(attrs={
         'class': 'uk-input',

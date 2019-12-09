@@ -65,7 +65,7 @@
             </h1>
 
             {% if form %}
-                <form action="/#get-advice" method="post" class="uk-form-horizontal uk-margin-large">
+                <form action="{{ request.build_absolute_uri }}#get-advice" method="post" class="uk-form-horizontal uk-margin-large">
                     {% csrf_token %}
 
                     {% if messages %}
