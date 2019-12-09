@@ -40,7 +40,7 @@
     <nav class="uk-navbar-container" uk-navbar>
         <div class="uk-navbar-left">
             <ul class="uk-navbar-nav">
-                <li class="uk-active"><a href="">Home</a></li>
+                <li class="uk-active"><a href="/">Home</a></li>
                 <li class="uk-parent"><a href="">About</a></li>
                 <li class="uk-parent"><a href="#get-advice">Get Advice</a></li>
                 <li><a href=""></a></li>
@@ -64,52 +64,61 @@
                 Get Advice
             </h1>
 
-            <form action="/#get-advice" method="post" class="uk-form-horizontal uk-margin-large">
-                {% csrf_token %}
+            {% if form %}
+                <form action="/#get-advice" method="post" class="uk-form-horizontal uk-margin-large">
+                    {% csrf_token %}
 
-                {% if messages %}
-                <div class="uk-margin">
-                    {% for message in messages %}
-                    <div class="uk-alert-success" uk-alert>
-                            <a class="uk-alert-close" uk-close></a>
-                            <p>{{ message }}</p>
-                        </div>
-                    {% endfor %}
-                </div>
-                {% endif %}
-                {% if form.non_field_errors %}
-                  <div class="uk-margin">
-                    {% for err in form.non_field_errors %}
-                        <div class="uk-alert-danger" uk-alert>
-                            <a class="uk-alert-close" uk-close></a>
-                            <p>{{ err }}</p>
-                        </div>
-                    {% endfor %}
-                  </div>
-                {% endif %}
-
-                {% for hidden_field in form.hidden_fields %}
-                    {{ hidden_field.errors }}
-                    {{ hidden_field }}
-                {% endfor %}
-
-                {% for field in form.visible_fields %}
-                <div class="uk-margin">
-                    <label class="uk-form-label">{{ field.label_tag }}</label>
-                    <div class="uk-form-controls">
-                        {% if field.errors %}
-                            {{ field|add_class:"uk-form-danger" }}
-                        {% else %}
-                            {{ field }}
-                        {% endif %}
-                        <div>{{ field.errors }}</div>
+                    {% if messages %}
+                    <div class="uk-margin">
+                        {% for message in messages %}
+                        <div class="uk-alert-success" uk-alert>
+                                <a class="uk-alert-close" uk-close></a>
+                                <p>{{ message }}</p>
+                            </div>
+                        {% endfor %}
                     </div>
-                </div>
-                {% endfor %}
+                    {% endif %}
+                    {% if form.non_field_errors %}
+                      <div class="uk-margin">
+                        {% for err in form.non_field_errors %}
+                            <div class="uk-alert-danger" uk-alert>
+                                <a class="uk-alert-close" uk-close></a>
+                                <p>{{ err }}</p>
+                            </div>
+                        {% endfor %}
+                      </div>
+                    {% endif %}
+
+                    {% for hidden_field in form.hidden_fields %}
+                        {{ hidden_field.errors }}
+                        {{ hidden_field }}
+                    {% endfor %}
+
+                    {% for field in form.visible_fields %}
+                    <div class="uk-margin">
+                        <label class="uk-form-label">{{ field.label_tag }}</label>
+                        <div class="uk-form-controls">
+                            {% if field.errors %}
+                                {{ field|add_class:"uk-form-danger" }}
+                            {% else %}
+                                {{ field }}
+                            {% endif %}
+                            <div>{{ field.errors }}</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    <div class="uk-margin">
+                        <input class="uk-button uk-button-primary uk-width-1-1" type="submit" value="Submit">
+                    </div>
+                </form>
+            {% else %}
                 <div class="uk-margin">
-                    <input class="uk-button uk-button-primary uk-width-1-1" type="submit" value="Submit">
+                    <a class="uk-button uk-button-default uk-width-1-2"
+                       style="float: left" href="/huser/#get-advice">Home</a>
+                    <a class="uk-button uk-button-secondary uk-width-1-2"
+                       style="float: right" href="/cuser/#get-advice">Commercial</a>
                 </div>
-            </form>
+            {% endif %}
         </div>
     </div>
 
