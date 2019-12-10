@@ -65,6 +65,8 @@ def get_proposal(input):
             response['charge_controller'] = True
             c.assert_fact({'has_charge_controller': True})
 
+
+
     print(input)
     assert_fact('panels', input)
     return response
