@@ -15,6 +15,14 @@ class HomeUserForm(Form):
         'class': 'uk-input',
         'placeholder': 'Enter maximum budget range'
     }))
+    min_temperature = forms.DecimalField(label='Min Temperature', required=False, widget=forms.TextInput(attrs={
+        'class': 'uk-input',
+        'placeholder': 'Enter minimum temperature'
+    }))
+    max_temperature = forms.DecimalField(label='Max Temperature', required=False, widget=forms.TextInput(attrs={
+        'class': 'uk-input',
+        'placeholder': 'Enter maximum temperature'
+    }))
     postcode = forms.CharField(label='Postcode', required=False, widget=forms.TextInput(attrs={
         'class': 'uk-input',
         'placeholder': 'Enter your postcode'

@@ -1,7 +1,8 @@
 from django.views.generic import TemplateView, FormView
 from django.contrib.messages.views import SuccessMessageMixin
-from django.contrib import messages
+from kep_rules.test import get_proposal
 from .forms import *
+from uuid import uuid4
 
 
 class IndexView(TemplateView):
@@ -32,6 +33,29 @@ class UserFormView(SuccessMessageMixin, FormView):
             elif min_budget == max_budget:
                 form.add_error(None, "Submission Failed: Minimum budget cannot be equal to maximum budget.")
                 return self.form_invalid(form)
+
+        if min_budget:
+            form.cleaned_data['min_budget'] = int(form.cleaned_data['min_budget'])
+        if max_budget:
+            form.cleaned_data['max_budget'] = int(form.cleaned_data['max_budget'])
+        if form.cleaned_data['min_temperature']:
+            form.cleaned_data['min_temperature'] = int(form.cleaned_data['min_temperature'])
+        if form.cleaned_data['max_temperature']:
+            form.cleaned_data['max_temperature'] = int(form.cleaned_data['max_temperature'])
+
+        if form.cleaned_data['grid_type']:
+            types = ['on-grid', 'off-grid']
+            form.cleaned_data['grid_type'] = types[int(form.cleaned_data['grid_type'])]
+
+        user_id = uuid4()
+
+        rule_req = {'uid': str(user_id)}
+        rule_req.update(form.cleaned_data)
+        rule_req['electricity'] = int(rule_req['electricity'])
+
+        retres = get_proposal(rule_req)
+
+        print(retres)
 
         return super().form_valid(form)
 
