@@ -7,11 +7,11 @@ CHOICES = tuple([(u'', '----------')] + sorted(COUNTRIES.items()))
 
 class HomeUserForm(Form):
     error_css_class = 'uk-form-danger'
-    max_budget = forms.DecimalField(label='Max Budget', required=False, widget=forms.TextInput(attrs={
+    max_budget = forms.DecimalField(label='Max Budget', required=False, widget=forms.NumberInput(attrs={
         'class': 'uk-input',
         'placeholder': 'Enter maximum budget range'
     }))
-    max_temperature = forms.DecimalField(label='Max Temperature', required=False, widget=forms.TextInput(attrs={
+    max_temperature = forms.DecimalField(label='Max Temperature', required=False, widget=forms.NumberInput(attrs={
         'class': 'uk-input',
         'placeholder': 'Enter maximum temperature'
     }))
@@ -24,7 +24,7 @@ class HomeUserForm(Form):
         'placeholder': 'Enter your postcode'
     }))
     country = forms.ChoiceField(choices=CHOICES, widget=forms.Select(attrs={'class': 'uk-select'}))
-    electricity = forms.DecimalField(required=False, widget=forms.TextInput(attrs={
+    electricity = forms.DecimalField(required=False, widget=forms.NumberInput(attrs={
         'class': 'uk-input',
         'placeholder': 'Enter your electricity need in kW/h'
     }))
