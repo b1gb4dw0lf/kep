@@ -7,9 +7,17 @@ CHOICES = tuple([(u'', '----------')] + sorted(COUNTRIES.items()))
 
 class HomeUserForm(Form):
     error_css_class = 'uk-form-danger'
+    min_budget = forms.DecimalField(label='Minimium Budget', initial=0, required=False, widget=forms.NumberInput(attrs={
+        'class': 'uk-input',
+        'placeholder': 'Enter maximum budget range'
+    }))
     max_budget = forms.DecimalField(label='Max Budget', required=False, widget=forms.NumberInput(attrs={
         'class': 'uk-input',
         'placeholder': 'Enter maximum budget range'
+    }))
+    min_temperature = forms.DecimalField(label='Minimum Temperature', initial=0, required=False, widget=forms.NumberInput(attrs={
+        'class': 'uk-input',
+        'placeholder': 'Enter minimium temperature'
     }))
     max_temperature = forms.DecimalField(label='Max Temperature', required=False, widget=forms.NumberInput(attrs={
         'class': 'uk-input',
