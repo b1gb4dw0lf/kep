@@ -1,9 +1,14 @@
 from django.views.generic import TemplateView, FormView
 from django.contrib.messages.views import SuccessMessageMixin
-from kep_rules.test import get_proposal
+from kep_rules.test import Rules
 from .forms import *
 from uuid import uuid4
 from .models import SolarPanel, Battery, Inverter
+from django.shortcuts import redirect, reverse
+from urllib.parse import urlencode, parse_qs
+
+
+rule_engine = Rules()
 
 
 class IndexView(TemplateView):
@@ -23,7 +28,6 @@ class UserFormView(SuccessMessageMixin, FormView):
     """
     template_name = 'home.html'
     form_class = HomeUserForm
-    success_url = '/huser/#get-advice'
 
     success_message = 'Submission Successful'
 
@@ -67,16 +71,10 @@ class UserFormView(SuccessMessageMixin, FormView):
 
         rule_req = {'uid': str(user_id)}
         rule_req.update(form.cleaned_data)
-        retres = get_proposal(rule_req)
+        retres = rule_engine.get_proposal(rule_req)
+        retres['materials'] = ",".join(retres['materials'])
 
-        print(retres)
-
-        panels = SolarPanel.objects.filter(
-            material__in=retres['materials'],
-            watts__lte=retres['electricity']
-        ).order_by('-price')
-
-        return super().form_valid(form)
+        return redirect(reverse('solution_view') + "?" + urlencode(retres) + "#solution")
 
 
 class CommercialFormView(SuccessMessageMixin, FormView):
@@ -128,38 +126,47 @@ class ProjectProposal(TemplateView):
     template_name = 'home.html'
 
     def dispatch(self, request, *args, **kwargs):
-        self.panel = request.GET.get('panel')
-        self.battery = request.GET.get('battery')
-        self.inverter = request.GET.get('inverter')
+        self.params = parse_qs(request.GET.urlencode())
         return super(ProjectProposal, self).dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super(ProjectProposal, self).get_context_data(**kwargs)
+        params = self.params
 
         total_price = 0
         total_watt = 0
         total_weight = 0
         total_area = 0
 
-        if self.panel:
-            panel = SolarPanel.objects.get(pk=self.panel)
-            total_price += 10 * panel.price
-            total_area += 10 * panel.area
-            total_watt += 10 * panel.watts
-            total_weight += 10 * panel.weight
-            context.update({'panel': panel})
-        if self.battery:
-            battery = Battery.objects.get(pk=self.battery)
-            total_price += 2 * battery.price
-            context.update({'battery': battery})
-        if self.inverter:
-            inverter = Inverter.objects.get(pk=self.inverter)
-            total_price += inverter.price
-            context.update({'inverter': inverter})
+        for key in params:
+            if key != 'materials':
+                params[key] = "".join(params[key])
+
+        panel = SolarPanel.objects.filter(
+            material__in=params['materials'],
+            watts__lte=float(params['electricity'])
+        ).order_by('-price').first()
+
+        battery = Battery.objects.all().order_by('-amper_hours').first()
+
+        inverter = Inverter.objects.filter(
+            watts__lte=float(params['electricity'])
+        ).order_by('-price').first()
+
+        total_price += 10 * panel.price
+        total_area += 10 * panel.area
+        total_watt += 10 * panel.watts
+        total_weight += 10 * panel.weight
+        context.update({'panel': panel})
+
+        total_price += 2 * battery.price
+        context.update({'battery': battery})
+
+        total_price += inverter.price
+        context.update({'inverter': inverter})
 
         total_watt_twenty_years = (panel.watts/1000) * 4.2 * 365 * 20 * 0.80
         cost_per_hour = total_price / total_watt_twenty_years
-        print(cost_per_hour)
 
         context.update({
             'total_price': total_price,

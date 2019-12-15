@@ -22,5 +22,5 @@ urlpatterns = [
     path('', IndexView.as_view()),
     path('huser/', UserFormView.as_view()),
     path('cuser/', CommercialFormView.as_view()),
-    path('solution/', ProjectProposal.as_view()),
+    path('solution/', ProjectProposal.as_view(), name='solution_view'),
 ]
