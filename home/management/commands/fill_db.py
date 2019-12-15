@@ -10,6 +10,10 @@ class Command(BaseCommand):
     help = 'Closes the specified poll for voting'
 
     def add_arguments(self, parser):
+        """
+
+        @param parser:
+        """
         pass
 
     def fill_solar_panels(self):

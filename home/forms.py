@@ -6,6 +6,11 @@ CHOICES = tuple([(u'', '----------')] + sorted(COUNTRIES.items()))
 
 
 class HomeUserForm(Form):
+    """input requirements form for the less experienced home user looking for projects of smaller scale
+    
+    Arguments:
+        Form {Django Form} -- extension of the Django Form engine
+    """
     error_css_class = 'uk-form-danger'
     min_budget = forms.DecimalField(label='Minimium Budget', initial=0, required=False, widget=forms.NumberInput(attrs={
         'class': 'uk-input',
@@ -41,6 +46,12 @@ class HomeUserForm(Form):
 
 
 class CommercialUserForm(HomeUserForm):
+    """input requirements form for the more advanced investor looking to realize a commercial project of bigger scale
+    
+    Arguments:
+        HomeUserForm {base form} -- Both HomeUser and CommercialUser have the same base parameters.
+        Inheritance is used here to avoid duplication.
+    """
     error_css_class = 'uk-form-danger'
     price_per_watt = forms.DecimalField(label='Price/Watt', required=False, widget=forms.TextInput(attrs={
         'class': 'uk-input',

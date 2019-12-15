@@ -4,6 +4,14 @@ from decimal import Decimal
 
 # Called in home/views
 def get_proposal(input_):
+    """rules inference engine based on durable rules engine
+    
+    Arguments:
+        input_ {dict} -- [input data to be used for inference]
+    
+    Returns:
+        response -- dictionary with different properties of the output system
+    """
 
     response = {}
 

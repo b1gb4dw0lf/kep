@@ -6,10 +6,20 @@ from uuid import uuid4
 
 
 class IndexView(TemplateView):
+    """Base home page of the application
+    
+    :param TemplateView: django engine template view
+    """
     template_name = 'home.html'
 
 
 class UserFormView(SuccessMessageMixin, FormView):
+    """View for handling collection of user requirements
+    
+    :param SuccessMessageMixin: mixin for interaction with the user providing feedbacks
+    on the form
+    :param FormView: django base view for views containing forms
+    """
     template_name = 'home.html'
     form_class = HomeUserForm
     success_url = '/huser/#get-advice'
@@ -17,6 +27,11 @@ class UserFormView(SuccessMessageMixin, FormView):
     success_message = 'Submission Successful'
 
     def form_valid(self, form):
+        """check if the form data is valid so that it can be further processed by the
+        knowledge system
+        
+        :param form: data coming from the form in raw format
+        """
         # From here the form is validated and we can do rule chaining etc
         min_budget = form.cleaned_data['min_budget']
         max_budget = form.cleaned_data['max_budget']
@@ -61,12 +76,23 @@ class UserFormView(SuccessMessageMixin, FormView):
 
 
 class CommercialFormView(SuccessMessageMixin, FormView):
+    """form for the commercial investor. Similar to UserFormView
+    
+    :param SuccessMessageMixin: mixin for interaction with the user providing feedbacks
+    on the form
+    :param FormView: django base view for views containing forms
+    """
     template_name = 'home.html'
     form_class = CommercialUserForm
     success_url = '/cuser/#get-advice'
     success_message = 'Submission Successful'
 
     def form_valid(self, form):
+        """check if the form data is valid so that it can be further processed by the
+        knowledge system
+        
+        :param form: data coming from the form in raw format
+        """
         # From here the form is validated and we can do rule chaining etc
         min_budget = form.cleaned_data['min_budget']
         max_budget = form.cleaned_data['max_budget']
