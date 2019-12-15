@@ -1,6 +1,7 @@
 from django.db import models
 
 
+
 class SolarPanel(models.Model):
     name = models.CharField(max_length=255)
     shape = models.CharField(choices=[
@@ -21,6 +22,7 @@ class SolarPanel(models.Model):
     weight = models.IntegerField(help_text='Weight of the panel in grams')
     price = models.DecimalField(max_digits=15, decimal_places=2,
                                 help_text='Price of the panel in "dollars.cents"')
+    image_url = models.URLField(max_length=500, blank=True, null=True)
 
     @property
     def area(self):
