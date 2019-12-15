@@ -74,20 +74,24 @@ def get_proposal(input_):
             response['charge_controller'] = True
             c.assert_fact({'has_charge_controller': True})
 
-
+        @when_all(+m.shape)
+        def available_shapes(c):
+            pass
 
     input_ = preformat_json(input_)
     assert_fact('panels', input_)
+    response['electricity'] = input_['electricity']
     return response
 
 
 def preformat_json(input_):
-    '''
+    """
     transforms decimal to float so they are JSON serializable
-    '''
+    """
     for k, v in input_.items():
         if isinstance(v, Decimal):
             input_[k] = float(v)
+    return input_
 
 
 '''

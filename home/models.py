@@ -1,5 +1,6 @@
 from django.db import models
 
+
 class SolarGridComponent(models.Model):
     """Base class for different solar grid system components.
     As all components share similar variables, such as name and price, this base class avoids duplication through inheritance.
@@ -8,9 +9,8 @@ class SolarGridComponent(models.Model):
     
     :param models: [extension of the Django models engine which establishes the relation with the database]
     """
-
     name = models.CharField(max_length=255)
-    price = models.DecimalField(max_digits=15, decimal_places=2, help_text='Price of the component in "dollars.cents"')
+    price = models.FloatField(help_text='Price of the panel in "dollars.cents"')
     image_url = models.URLField(max_length=500, blank=True, null=True)
 
     @property
@@ -28,6 +28,7 @@ class SolarGridComponent(models.Model):
     class Meta:
         abstract = True
 
+
 class SolarPanel(SolarGridComponent):
     """[main component of the solar grid system]
     :param SolarGridComponent: [the base solar grid components class]
@@ -37,7 +38,7 @@ class SolarPanel(SolarGridComponent):
         ('square', 'Square'),
         ('triangle', 'Triangle')
     ], max_length=255)
-    watt = models.IntegerField(help_text='Amount of electricity it produces in Watts')
+    watts = models.IntegerField(help_text='Amount of electricity it produces in Watts')
     material = models.CharField(choices=[
         ('mono-crystalline', 'Mono-Crystalline'),
         ('poly-crystalline', 'Poly-crystalline'),
@@ -90,5 +91,4 @@ class Inverter(SolarGridComponent):
     input_voltage = models.IntegerField(help_text='Input voltage')
     output_voltage = models.IntegerField(help_text='Output voltage')
     watts = models.IntegerField(help_text='Watts')
-
     kind = models.CharField(max_length=255)

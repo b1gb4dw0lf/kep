@@ -3,6 +3,7 @@ from django.contrib.messages.views import SuccessMessageMixin
 from kep_rules.test import get_proposal
 from .forms import *
 from uuid import uuid4
+from .models import SolarPanel, Battery, Inverter
 
 
 class IndexView(TemplateView):
@@ -66,11 +67,14 @@ class UserFormView(SuccessMessageMixin, FormView):
 
         rule_req = {'uid': str(user_id)}
         rule_req.update(form.cleaned_data)
-        rule_req['electricity'] = int(rule_req['electricity'])
-
         retres = get_proposal(rule_req)
 
         print(retres)
+
+        panels = SolarPanel.objects.filter(
+            material__in=retres['materials'],
+            watts__lte=retres['electricity']
+        ).order_by('-price')
 
         return super().form_valid(form)
 
@@ -118,3 +122,54 @@ class CommercialFormView(SuccessMessageMixin, FormView):
                 return self.form_invalid(form)
 
         return super().form_valid(form)
+
+
+class ProjectProposal(TemplateView):
+    template_name = 'home.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        self.panel = request.GET.get('panel')
+        self.battery = request.GET.get('battery')
+        self.inverter = request.GET.get('inverter')
+        return super(ProjectProposal, self).dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super(ProjectProposal, self).get_context_data(**kwargs)
+
+        total_price = 0
+        total_watt = 0
+        total_weight = 0
+        total_area = 0
+
+        if self.panel:
+            panel = SolarPanel.objects.get(pk=self.panel)
+            total_price += 10 * panel.price
+            total_area += 10 * panel.area
+            total_watt += 10 * panel.watts
+            total_weight += 10 * panel.weight
+            context.update({'panel': panel})
+        if self.battery:
+            battery = Battery.objects.get(pk=self.battery)
+            total_price += 2 * battery.price
+            context.update({'battery': battery})
+        if self.inverter:
+            inverter = Inverter.objects.get(pk=self.inverter)
+            total_price += inverter.price
+            context.update({'inverter': inverter})
+
+        total_watt_twenty_years = (panel.watts/1000) * 4.2 * 365 * 20 * 0.80
+        cost_per_hour = total_price / total_watt_twenty_years
+        print(cost_per_hour)
+
+        context.update({
+            'total_price': total_price,
+            'total_watt': total_watt,
+            'total_weight': total_weight,
+            'total_area': total_area,
+            'cost_per_watt': "{:0.2f}".format(total_price / total_watt),
+            'cost_per_hour': "{:0.2f}".format(cost_per_hour)
+        })
+
+        return context
+
+

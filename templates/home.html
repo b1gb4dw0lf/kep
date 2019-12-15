@@ -34,6 +34,10 @@
             color: #f0506e !important;
             border-color: #f0506e !important;
         }
+
+        .uk-card {
+            height: auto;
+        }
     </style>
 </head>
 <body>
@@ -41,9 +45,8 @@
         <div class="uk-navbar-left">
             <ul class="uk-navbar-nav">
                 <li class="uk-active"><a href="/">Home</a></li>
-                <li class="uk-parent"><a href="">About</a></li>
-                <li class="uk-parent"><a href="#get-advice">Get Advice</a></li>
-                <li><a href=""></a></li>
+                <li class="uk-active"><a href="">About</a></li>
+                <li class="uk-active"><a href="#get-advice">Get Advice</a></li>
             </ul>
         </div>
     </nav>
@@ -56,7 +59,7 @@
                 style="background: rgb(51, 51, 51); color: rgb(250, 250, 250); padding-bottom: 15px;">Solar INC</h1>
         </div>
     </div>
-
+    {% if panel == None %}
     <div class="uk-section uk-section-secondary">
         <div style="max-width: 600px; margin: auto;">
             <h1 class="uk-width-1-1@m uk-text-center uk-margin-auto uk-margin-auto-vertical uk-heading-medium">
@@ -121,6 +124,97 @@
             {% endif %}
         </div>
     </div>
+    {% else %}
+    <h1 style="margin-top: 50px !important;" class="uk-width-1-1@m uk-text-center uk-margin-auto uk-margin-auto-vertical uk-heading-medium">
+        <a id="solution"></a>
+        Our Solution
+    </h1>
+    <div class="uk-section uk-container">
+        <div class="uk-child-width-1-2@m" uk-grid>
+            <div>
+                {% if panel %}
+                <div class="uk-card uk-card-default uk-grid-collapse uk-child-width-1-2@s uk-margin" uk-grid>
+                    <div class="uk-card-media-left uk-cover-container">
+                        <img style="width: 200px; height: 100px;" src="{{panel.image_url}}" alt="" uk-cover>
+                        <canvas width="200" height="100"></canvas>
+                    </div>
+                    <div>
+                        <div class="uk-card-body">
+                            <h3 class="uk-card-title">{{panel.name}}</h3>
+                            <ul>
+                                <li>{{panel.watts}} Watts</li>
+                                <li>Height: {{panel.height}} cm</li>
+                                <li>Width: {{panel.width}} cm</li>
+                                <li>Material: {{panel.material|title}}</li>
+                                <li>Price: {{panel.dollar_amount}}</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                {% if battery %}
+                <div class="uk-card uk-card-default uk-grid-collapse uk-child-width-1-2@s uk-margin" uk-grid>
+                    <div class="uk-card-media-left uk-cover-container">
+                        <img style="width: 200px; height: 100px;" src="{{battery.image_url}}" alt="" uk-cover>
+                        <canvas width="200" height="100"></canvas>
+                    </div>
+                    <div>
+                        <div class="uk-card-body">
+                            <h3 class="uk-card-title">{{battery.name}}</h3>
+                            <ul>
+                                <li>{{battery.voltage}} Volts</li>
+                                <li>{{battery.amper_hours}} Ampere/Hour</li>
+                                <li>{{battery.kind}}</li>
+                                <li>Price: {{battery.dollar_amount}}</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                {% if inverter %}
+                <div class="uk-card uk-card-default uk-grid-collapse uk-child-width-1-2@s uk-margin" uk-grid>
+                    <div class="uk-card-media-left uk-cover-container">
+                        <img style="width: 200px; height: 100px;" src="{{inverter.image_url}}" alt="" uk-cover>
+                        <canvas width="200" height="100"></canvas>
+                    </div>
+                    <div>
+                        <div class="uk-card-body">
+                            <h3 class="uk-card-title">{{inverter.name}}</h3>
+                            <ul>
+                                <li>In: {{inverter.input_voltage}} Volts</li>
+                                <li>Out: {{inverter.outut_voltage}} Volts</li>
+                                <li>{{inverter.watts}} Watts</li>
+                                <li>{{inverter.kind}}</li>
+                                <li>Price: {{battery.dollar_amount}}</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            <div>
+                <h2 class="uk-width-1-1@m uk-text-center uk-margin-auto uk-margin-auto-vertical uk-heading-xsmall">
+                    <a id="specifications"></a>
+                    Specifications
+                </h2>
+                <ul>
+                    <li>10 x {{panel}}</li>
+                    <li>Cell Type: {{panel.material|title}}</li>
+                    <li>1 x {{battery}}</li>
+                    <li>1 x {{inverter}}</li>
+                    <li>Total Weight: {{total_weight}} grams</li>
+                    <li>Total Area: {{total_area}} cm2</li>
+                    <li>Total Wattage: {{total_watt}} Watts</li>
+                    <li>Cost per Watt: ${{cost_per_watt}}</li>
+                    <li>Cost per Hour: ${{cost_per_hour}}</li>
+                    <li>Total Price: ${{total_price}}</li>
+                    <li></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
 
     <!--
     <div class="uk-section uk-section-primary"><div class="uk-child-width-1-3@m" uk-grid

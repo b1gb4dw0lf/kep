@@ -12,7 +12,7 @@ class HomeUserForm(Form):
         Form {Django Form} -- extension of the Django Form engine
     """
     error_css_class = 'uk-form-danger'
-    min_budget = forms.DecimalField(label='Minimium Budget', initial=0, required=False, widget=forms.NumberInput(attrs={
+    min_budget = forms.DecimalField(label='Minimium Budget', required=False, widget=forms.NumberInput(attrs={
         'class': 'uk-input',
         'placeholder': 'Enter maximum budget range'
     }))
@@ -20,7 +20,7 @@ class HomeUserForm(Form):
         'class': 'uk-input',
         'placeholder': 'Enter maximum budget range'
     }))
-    min_temperature = forms.DecimalField(label='Minimum Temperature', initial=0, required=False, widget=forms.NumberInput(attrs={
+    min_temperature = forms.DecimalField(label='Minimum Temperature', required=False, widget=forms.NumberInput(attrs={
         'class': 'uk-input',
         'placeholder': 'Enter minimium temperature'
     }))
@@ -29,7 +29,7 @@ class HomeUserForm(Form):
         'placeholder': 'Enter maximum temperature'
     }))
     shape = forms.ChoiceField(required=False,
-                              choices=[('', '----------'), (0, 'Rectangular'), (1, 'Square'), (0, 'Triangle')],
+                              choices=[('', '----------'), (0, 'Rectangular'), (1, 'Square'), (2, 'Triangle')],
                               widget=forms.Select(attrs={'class': 'uk-select'})
                               )
     postcode = forms.CharField(label='Postcode', required=False, widget=forms.TextInput(attrs={
