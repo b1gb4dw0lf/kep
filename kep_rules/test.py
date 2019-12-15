@@ -1,8 +1,9 @@
 from durable.lang import *
+from decimal import Decimal
 
 
 # Called in home/views
-def get_proposal(input):
+def get_proposal(input_):
 
     response = {}
 
@@ -67,9 +68,19 @@ def get_proposal(input):
 
 
 
-    print(input)
-    assert_fact('panels', input)
+    input_ = preformat_json(input_)
+    assert_fact('panels', input_)
     return response
+
+
+def preformat_json(input_):
+    '''
+    transforms decimal to float so they are JSON serializable
+    '''
+    for k, v in input_.items():
+        if isinstance(v, Decimal):
+            input_[k] = float(v)
+
 
 '''
 user_id = uuid4()
