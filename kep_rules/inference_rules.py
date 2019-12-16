@@ -108,8 +108,10 @@ class Rules:
         input_ = preformat_json(input_)
         response = (get_choosen_panel(input_['max_budget'], input_['electricity']))
         response['uid'] = str(uuid4())
+        response['cost_per_watt'] = response['total_price'] /  response['total_watts']
         assert_fact('solution', response)
         self.response.update(response)
+        print(response)
         return self.response
 
 
@@ -119,22 +121,37 @@ def get_choosen_panel(max_budget, electricity):
     total_watts = 0
     total_panels = 0
 
-    for p in SolarPanel.objects.all():
-        panel_amount = round(electricity / p.watts)
-        panel_watts = panel_amount * p.watts
-        panels_price = panel_amount * p.price
+    previously_best_panel = None
+    for p in SolarPanel.objects.all().order_by('watts'):
+        if p.watts * 1000 < electricity: 
+            previously_best_panel = p
+        else:
+            break
 
-        if (total_price == 0 and (panels_price < max_budget)) or (panels_price < total_price) \
-                and panel_watts < electricity:
-            panel = p
-            total_price = panels_price
-            total_watts = panel_watts
-            total_panels = panel_amount
+    # need to compose of multiple panels 
+    total_panels = 0
+    if not previously_best_panel:
+        p = SolarPanel.objects.order_by('-watts').first()
+        panel_amount = round(electricity / p.watts)
+        total_watts = panel_amount * panel_watts
+        panel = p
+        total_price = panel_amount * p.price
+        total_area = panel.area * amount
+    else:
+        p = previously_best_panel
+        panel_amount = 1
+        total_price = p.price
+        total_watts = p.watts
+        panel = p
+        total_area = panel.area 
+    print(p)
+
 
     return {
         'panel_pk': panel.pk,
         'total_price': total_price,
         'total_watts': total_watts,
+        'total_area': total_area,
         'panel_amount': total_panels
     }
 
