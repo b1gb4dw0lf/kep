@@ -38,6 +38,13 @@
         .uk-card {
             height: auto;
         }
+        /*==================== 
+          Footer 
+          ====================== */
+        .page-footer {
+            padding-left: 50px;
+            background: #363334;
+        }
     </style>
 </head>
 <body>
@@ -127,7 +134,7 @@
     {% else %}
     <h1 style="margin-top: 50px !important;" class="uk-width-1-1@m uk-text-center uk-margin-auto uk-margin-auto-vertical uk-heading-medium">
         <a id="solution"></a>
-        Our Solution
+        Proposed Solution
     </h1>
     <div class="uk-section uk-container">
         <div class="uk-child-width-1-2@m" uk-grid>
@@ -208,7 +215,6 @@
                     <li>Cost per Watt: ${{cost_per_watt}}</li>
                     <li>Cost per Hour: ${{cost_per_hour}}</li>
                     <li>Total Price: ${{total_price}}</li>
-                    <li></li>
                 </ul>
             </div>
         </div>
@@ -245,5 +251,14 @@
     <div class="uk-section uk-section-secondary">
 
     </div>
+    <!-- Footer -->
+    <footer class="page-footer font-small blue">
+
+      <!-- Copyright -->
+      <div class="footer-copyright text-center py-3">© 2019 Copyright:
+        <a href="/"> Solar Inc.</a>
+      </div>
+      <!-- Copyright -->
+    </footer>
 </body>
 </html>
