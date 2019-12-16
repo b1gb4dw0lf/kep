@@ -1,6 +1,7 @@
 from durable.lang import *
 from decimal import Decimal
 from home.models import *
+import math
 from uuid import uuid4
 
 
@@ -99,16 +100,20 @@ class Rules:
         self.response = {}
         input_ = preformat_json(input_)
         assert_fact('panels', input_)
-        self.response['electricity'] = input_['electricity'] * 1000
+        self.response['electricity'] = input_['electricity']
         self.response['max_budget'] = input_['max_budget']
         return self.response
 
     def get_solution(self, input_):
         self.response = {}
         input_ = preformat_json(input_)
-        response = (get_choosen_panel(input_['max_budget'], input_['electricity']))
+        panels_budget = 0.4 * input_['max_budget']
+        response = get_choosen_panel(panels_budget, input_['electricity'])
+        inverter_budget = input_['max_budget'] * 0.4
+        response = {**response, **get_chosen_inverter(inverter_budget, input_['electricity'])}
+        battery_budget = input_['max_budget'] * 0.2
+        response = {**response, **get_chosen_battery(battery_budget, input_['electricity'])}
         response['uid'] = str(uuid4())
-        response['cost_per_watt'] = response['total_price'] /  response['total_watts']
         assert_fact('solution', response)
         self.response.update(response)
         print(response)
@@ -123,7 +128,7 @@ def get_choosen_panel(max_budget, electricity):
 
     previously_best_panel = None
     for p in SolarPanel.objects.all().order_by('watts'):
-        if p.watts * 1000 < electricity: 
+        if p.watts < electricity: 
             previously_best_panel = p
         else:
             break
@@ -132,27 +137,93 @@ def get_choosen_panel(max_budget, electricity):
     total_panels = 0
     if not previously_best_panel:
         p = SolarPanel.objects.order_by('-watts').first()
-        panel_amount = round(electricity / p.watts)
+        panel_amount = math.ceil(electricity / p.watts)
         total_watts = panel_amount * panel_watts
         panel = p
-        total_price = panel_amount * p.price
         total_area = panel.area * amount
     else:
         p = previously_best_panel
         panel_amount = 1
-        total_price = p.price
         total_watts = p.watts
         panel = p
         total_area = panel.area 
-    print(p)
 
 
     return {
         'panel_pk': panel.pk,
-        'total_price': total_price,
         'total_watts': total_watts,
         'total_area': total_area,
-        'panel_amount': total_panels
+        'panel_amount': panel_amount
+    }
+
+
+def get_chosen_inverter(max_budget, electricity):
+    inverter = None
+    inverter_price = 0
+    inverter_watts = 0
+    inverter_amount = 0
+
+    previously_best_inverter = None
+    for i in Inverter.objects.all().order_by('watts'):
+        if i.watts < electricity: 
+            previously_best_inverter = i
+        else:
+            break
+
+    # need to compose of multiple inverters 
+    total_inverters = 0
+    if not previously_best_inverter:
+        i = Inverter.objects.order_by('-watts').first()
+        inverter_amount = math.ceil(electricity / i.watts)
+        total_watts = inverter_amount * inverter_watts
+        inverter = i
+        total_price = inverter_amount * i.price
+    else:
+        i = previously_best_inverter
+        inverter_amount = 1
+        total_price = i.price
+        total_watts = i.watts
+        inverter = i
+        total_area = inverter.area 
+
+
+    return {
+        'inverter_pk': inverter.pk,
+        'inverter_price': inverter_price,
+        'inverter_amount': inverter_amount
+    }
+
+def get_chosen_battery(max_budget, amper_hours):
+    battery = None
+    battery_price = 0
+    battery_watts = 0
+    battery_amount = 0
+
+    previously_best_battery = None
+    for b in Battery.objects.all().order_by('amper_hours'):
+        if b.amper_hours < amper_hours: 
+            previously_best_battery = b
+        else:
+            break
+
+    # need to compose of multiple batterys 
+    total_batterys = 0
+    if not previously_best_battery:
+        # get the battery with largest possible capacity
+        b = battery.objects.order_by('-watts').first()
+        battery_amount = math.ceil(amper_hours / b.amper_hours)
+    else:
+        b = previously_best_battery
+        battery_amount = 1
+
+    battery = b
+    total_price = b.price * battery_amount
+    total_watts = b.amper_hours * battery_amount
+
+    return {
+        'battery_pk': battery.pk,
+        'battery_price': battery_price,
+        'battery_amount': battery_amount
     }
 
 def preformat_json(input_):
