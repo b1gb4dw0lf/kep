@@ -19,7 +19,7 @@ from home.views import IndexView, UserFormView, CommercialFormView, ProjectPropo
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', IndexView.as_view()),
+    path('', IndexView.as_view(), name='index'),
     path('huser/', UserFormView.as_view()),
     path('cuser/', CommercialFormView.as_view()),
     path('solution/', ProjectProposal.as_view(), name='solution_view'),

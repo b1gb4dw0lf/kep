@@ -40,7 +40,7 @@ class UserFormView(SuccessMessageMixin, FormView):
         # From here the form is validated and we can do rule chaining etc
         min_budget = form.cleaned_data['min_budget']
         max_budget = form.cleaned_data['max_budget']
-        electricity = form.cleaned_data['electricity']
+        electricity = form.cleaned_data['electricity'] * 1000
 
         if not min_budget and not max_budget and not electricity:
             form.add_error(None, "Submission Failed: You have to supply more info")
@@ -133,30 +133,37 @@ class ProjectProposal(TemplateView):
         context = super(ProjectProposal, self).get_context_data(**kwargs)
         params = self.params
 
-        total_price = 0
-        total_watt = 0
-        total_weight = 0
         total_area = 0
 
         for key in params:
             if key != 'materials':
                 params[key] = "".join(params[key])
 
-        panel = SolarPanel.objects.filter(
-            material__in=params['materials'],
-            watts__lte=float(params['electricity'])
-        ).order_by('-price').first()
+        params['electricity'] = float(params['electricity'])
+        params['max_budget'] = int(params['max_budget'])
+
+        solution_response = rule_engine.get_solution(params)
+
+        print("Here goes!")
+        print(solution_response)
 
         battery = Battery.objects.all().order_by('-amper_hours').first()
 
         inverter = Inverter.objects.filter(
-            watts__lte=float(params['electricity'])
+            watts__lte=params['electricity']
         ).order_by('-price').first()
 
-        total_price += 10 * panel.price
-        total_area += 10 * panel.area
-        total_watt += 10 * panel.watts
-        total_weight += 10 * panel.weight
+        panel_pk = solution_response['panel_pk']
+
+        if not panel_pk:
+            redirect(reverse('index'))
+
+        panel = SolarPanel.objects.get(pk=panel_pk)
+
+        total_price = solution_response['total_price']
+        #total_area = solution_response['total_area']
+        total_watt = solution_response['total_watts']
+        #total_weight = solution_response['total_weight']
         context.update({'panel': panel})
 
         total_price += 2 * battery.price
@@ -171,8 +178,9 @@ class ProjectProposal(TemplateView):
         context.update({
             'total_price': total_price,
             'total_watt': total_watt,
-            'total_weight': total_weight,
-            'total_area': total_area,
+            'total_panels': solution_response['panel_amount'],
+            #'total_weight': total_weight,
+            #'total_area': total_area,
             'cost_per_watt': "{:0.2f}".format(total_price / total_watt),
             'cost_per_hour': "{:0.2f}".format(cost_per_hour)
         })

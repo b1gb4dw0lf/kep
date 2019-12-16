@@ -1,8 +1,10 @@
 from durable.lang import *
 from decimal import Decimal
+from home.models import *
+from uuid import uuid4
 
 
-class Rules():
+class Rules:
     response = {}
 
     def __init__(self):
@@ -69,6 +71,21 @@ class Rules():
             def available_shapes(c):
                 pass
 
+        with ruleset('solution'):
+            @when_all(+m.panel_pk & +m.panel_amount)
+            def calculate_total_weight(c):
+                panel = SolarPanel.objects.get(pk=c.m.panel_pk)
+                self.response.update({
+                    'total_weight': panel.weight * c.m.panel_amount
+                })
+
+            @when_all(+m.panel_pk & +m.panel_amount)
+            def calculate_total_area(c):
+                panel = SolarPanel.objects.get(pk=c.m.panel_pk)
+                self.response.update({
+                    'total_weight': panel.area * c.m.panel_amount
+                })
+
     # Called in home/views
     def get_proposal(self, input_):
         """rules inference engine based on durable rules engine
@@ -82,9 +99,44 @@ class Rules():
         self.response = {}
         input_ = preformat_json(input_)
         assert_fact('panels', input_)
-        self.response['electricity'] = input_['electricity']
+        self.response['electricity'] = input_['electricity'] * 1000
+        self.response['max_budget'] = input_['max_budget']
         return self.response
 
+    def get_solution(self, input_):
+        self.response = {}
+        input_ = preformat_json(input_)
+        response = (get_choosen_panel(input_['max_budget'], input_['electricity']))
+        response['uid'] = str(uuid4())
+        assert_fact('solution', response)
+        self.response.update(response)
+        return self.response
+
+
+def get_choosen_panel(max_budget, electricity):
+    panel = None
+    total_price = 0
+    total_watts = 0
+    total_panels = 0
+
+    for p in SolarPanel.objects.all():
+        panel_amount = round(electricity / p.watts)
+        panel_watts = panel_amount * p.watts
+        panels_price = panel_amount * p.price
+
+        if (total_price == 0 and (panels_price < max_budget)) or (panels_price < total_price) \
+                and panel_watts < electricity:
+            panel = p
+            total_price = panels_price
+            total_watts = panel_watts
+            total_panels = panel_amount
+
+    return {
+        'panel_pk': panel.pk,
+        'total_price': total_price,
+        'total_watts': total_watts,
+        'panel_amount': total_panels
+    }
 
 def preformat_json(input_):
     """

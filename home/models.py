@@ -75,7 +75,6 @@ class Battery(SolarGridComponent):
     """
     voltage = models.IntegerField(help_text='Voltage')
     amper_hours = models.IntegerField(help_text='Amper Hours')
-
     kind = models.CharField(max_length=255)
 
     class Meta:
