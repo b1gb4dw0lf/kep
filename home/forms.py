@@ -12,10 +12,6 @@ class HomeUserForm(Form):
         Form {Django Form} -- extension of the Django Form engine
     """
     error_css_class = 'uk-form-danger'
-    min_budget = forms.DecimalField(label='Minimium Budget', required=False, widget=forms.NumberInput(attrs={
-        'class': 'uk-input',
-        'placeholder': 'Enter maximum budget range'
-    }))
     max_budget = forms.DecimalField(label='Max Budget', required=False, widget=forms.NumberInput(attrs={
         'class': 'uk-input',
         'placeholder': 'Enter maximum budget range'
