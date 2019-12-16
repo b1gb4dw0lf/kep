@@ -1,6 +1,6 @@
 from django.views.generic import TemplateView, FormView
 from django.contrib.messages.views import SuccessMessageMixin
-from kep_rules.test import Rules
+from kep_rules.inference_rules import Rules
 from .forms import *
 from uuid import uuid4
 from .models import SolarPanel, Battery, Inverter
