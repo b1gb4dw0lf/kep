@@ -38,24 +38,13 @@ class UserFormView(SuccessMessageMixin, FormView):
         :param form: data coming from the form in raw format
         """
         # From here the form is validated and we can do rule chaining etc
-        min_budget = form.cleaned_data['min_budget']
         max_budget = form.cleaned_data['max_budget']
         electricity = form.cleaned_data['electricity'] * 1000
 
-        if not min_budget and not max_budget and not electricity:
+        if not max_budget and not electricity:
             form.add_error(None, "Submission Failed: You have to supply more info")
             return self.form_invalid(form)
 
-        if min_budget and max_budget:
-            if min_budget > max_budget:
-                form.add_error(None, "Submission Failed: Minimum budget cannot be higher than maximum budget.")
-                return self.form_invalid(form)
-            elif min_budget == max_budget:
-                form.add_error(None, "Submission Failed: Minimum budget cannot be equal to maximum budget.")
-                return self.form_invalid(form)
-
-        if min_budget:
-            form.cleaned_data['min_budget'] = int(form.cleaned_data['min_budget'])
         if max_budget:
             form.cleaned_data['max_budget'] = int(form.cleaned_data['max_budget'])
         if form.cleaned_data['min_temperature']:
@@ -96,7 +85,6 @@ class CommercialFormView(SuccessMessageMixin, FormView):
         :param form: data coming from the form in raw format
         """
         # From here the form is validated and we can do rule chaining etc
-        min_budget = form.cleaned_data['min_budget']
         max_budget = form.cleaned_data['max_budget']
         min_temperature = form.cleaned_data['min_temperature']
         max_temperature = form.cleaned_data['max_temperature']
@@ -105,19 +93,11 @@ class CommercialFormView(SuccessMessageMixin, FormView):
         electricity = form.cleaned_data['electricity']
         materials = form.cleaned_data['materials']
 
-        if not min_budget and not max_budget and not min_temperature and not max_temperature and \
+        if not max_budget and not min_temperature and not max_temperature and \
            not price_per_watt and not land_area and not electricity and not materials:
 
             form.add_error(None, "Submission Failed: You have to supply more info")
             return self.form_invalid(form)
-
-        if min_budget and max_budget:
-            if min_budget > max_budget:
-                form.add_error(None, "Submission Failed: Minimum budget cannot be higher than maximum budget.")
-                return self.form_invalid(form)
-            elif min_budget == max_budget:
-                form.add_error(None, "Submission Failed: Minimum budget cannot be equal to maximum budget.")
-                return self.form_invalid(form)
 
         return super().form_valid(form)
 
@@ -186,5 +166,3 @@ class ProjectProposal(TemplateView):
         })
 
         return context
-
-

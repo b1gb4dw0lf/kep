@@ -12,10 +12,6 @@ class HomeUserForm(Form):
         Form {Django Form} -- extension of the Django Form engine
     """
     error_css_class = 'uk-form-danger'
-    min_budget = forms.DecimalField(label='Minimium Budget', required=False, widget=forms.NumberInput(attrs={
-        'class': 'uk-input',
-        'placeholder': 'Enter maximum budget range'
-    }))
     max_budget = forms.DecimalField(label='Max Budget', required=False, widget=forms.NumberInput(attrs={
         'class': 'uk-input',
         'placeholder': 'Enter maximum budget range'
@@ -32,10 +28,12 @@ class HomeUserForm(Form):
                               choices=[('', '----------'), (0, 'Rectangular'), (1, 'Square'), (2, 'Triangle')],
                               widget=forms.Select(attrs={'class': 'uk-select'})
                               )
-    postcode = forms.CharField(label='Postcode', required=False, widget=forms.TextInput(attrs={
-        'class': 'uk-input',
-        'placeholder': 'Enter your postcode'
-    }))
+    
+    # to be activated in 2nd sprint iteration
+    # postcode = forms.CharField(label='Postcode', required=False, widget=forms.TextInput(attrs={
+    #     'class': 'uk-input',
+    #     'placeholder': 'Enter your postcode'
+    # }))
     country = forms.ChoiceField(choices=CHOICES, widget=forms.Select(attrs={'class': 'uk-select'}))
     electricity = forms.DecimalField(required=False, widget=forms.NumberInput(attrs={
         'class': 'uk-input',
