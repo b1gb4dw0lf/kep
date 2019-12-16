@@ -28,7 +28,7 @@ class Rules():
                 else:
                     self.response['materials'] = ['poly-crystalline']
 
-            @when_all((+m.postcode) & (+m.country))
+            @when_all((+m.country))
             def calculate_ecost_and_lux(c):
                 self.response['cpw'] = 0.20
                 self.response['lux'] = 100
