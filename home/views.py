@@ -61,6 +61,7 @@ class UserFormView(SuccessMessageMixin, FormView):
         rule_req = {'uid': str(user_id)}
         rule_req.update(form.cleaned_data)
         retres = rule_engine.get_proposal(rule_req)
+        print(retres)
         retres['materials'] = ",".join(retres['materials'])
 
         return redirect(reverse('solution_view') + "?" + urlencode(retres) + "#solution")
@@ -139,30 +140,23 @@ class ProjectProposal(TemplateView):
             redirect(reverse('index'))
 
         panel = SolarPanel.objects.get(pk=panel_pk)
-
-        total_price = solution_response['total_price']
-        #total_area = solution_response['total_area']
-        total_watt = solution_response['total_watts']
-        #total_weight = solution_response['total_weight']
         context.update({'panel': panel})
 
+        total_price = solution_response['total_price']
         total_price += 2 * battery.price
-        context.update({'battery': battery})
-
         total_price += inverter.price
+
+        context.update({'battery': battery})
         context.update({'inverter': inverter})
 
-        total_watt_twenty_years = (panel.watts/1000) * 4.2 * 365 * 20 * 0.80
-        cost_per_hour = total_price / total_watt_twenty_years
-
         context.update({
-            'total_price': total_price,
-            'total_watt': total_watt,
+            'total_price': solution_response['total_price'],
+            'total_watt': solution_response['total_watts'],
             'total_panels': solution_response['panel_amount'],
-            #'total_weight': total_weight,
-            #'total_area': total_area,
-            'cost_per_watt': "{:0.2f}".format(total_price / total_watt),
-            'cost_per_hour': "{:0.2f}".format(cost_per_hour)
+            'total_weight': solution_response['total_weight'],
+            'total_area': solution_response['total_area'],
+            'cost_per_watt': "{:0.2f}".format(solution_response['cost_per_watt']),
+            #'cost_per_hour': "{:0.2f}".format(cost_per_hour)
         })
 
         return context

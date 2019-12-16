@@ -25,7 +25,7 @@ class Rules:
 
             @when_all(m.max_temperature < 35)
             def is_poly_crystalline(c):
-                if self.response['materials']:
+                if 'materials' in self.response:
                     self.response['materials'].append('poly-crystalline')
                 else:
                     self.response['materials'] = ['poly-crystalline']
@@ -75,16 +75,23 @@ class Rules:
             @when_all(+m.panel_pk & +m.panel_amount)
             def calculate_total_weight(c):
                 panel = SolarPanel.objects.get(pk=c.m.panel_pk)
-                self.response.update({
-                    'total_weight': panel.weight * c.m.panel_amount
-                })
+                self.response['total_weight'] = panel.weight * c.m.panel_amount
 
             @when_all(+m.panel_pk & +m.panel_amount)
             def calculate_total_area(c):
                 panel = SolarPanel.objects.get(pk=c.m.panel_pk)
-                self.response.update({
-                    'total_weight': panel.area * c.m.panel_amount
-                })
+                self.response['total_area'] = panel.area * c.m.panel_amount
+
+            @when_all(+m.total_price & +m.total_watts)
+            def calculate_cost_per_watt(c):
+                print("WUTTT")
+                self.response['cost_per_watt'] = c.m.total_price / c.m.total_watts
+
+            @when_all(+m.total_price & +m.total_watts & +m.location_wattage & +m.panel_efficiency)
+            def calculate_cost_per_hour(c):
+                total_watt_twenty_years = (c.m.total_watts/1000) * c.m.location_wattage \
+                                          * 365 * 20 * c.m.panel_efficiency
+                self.response['cost_per_hour'] = c.m.total_price / total_watt_twenty_years
 
     # Called in home/views
     def get_proposal(self, input_):
@@ -98,28 +105,32 @@ class Rules:
         """
         self.response = {}
         input_ = preformat_json(input_)
+        print(input_)
         assert_fact('panels', input_)
         self.response['electricity'] = input_['electricity'] * 1000
         self.response['max_budget'] = input_['max_budget']
+        print(self.response)
         return self.response
 
     def get_solution(self, input_):
         self.response = {}
         input_ = preformat_json(input_)
-        response = (get_choosen_panel(input_['max_budget'], input_['electricity']))
+        response = (get_choosen_panel(input_['materials'], input_['max_budget'], input_['electricity']))
         response['uid'] = str(uuid4())
+        print(response)
         assert_fact('solution', response)
         self.response.update(response)
+        print(self.response)
         return self.response
 
 
-def get_choosen_panel(max_budget, electricity):
+def get_choosen_panel(materials, max_budget, electricity):
     panel = None
     total_price = 0
     total_watts = 0
     total_panels = 0
 
-    for p in SolarPanel.objects.all():
+    for p in SolarPanel.objects.filter(material__in=materials):
         panel_amount = round(electricity / p.watts)
         panel_watts = panel_amount * p.watts
         panels_price = panel_amount * p.price
