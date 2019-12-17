@@ -125,9 +125,6 @@ class ProjectProposal(TemplateView):
 
         solution_response = rule_engine.get_solution(params)
 
-        print("Presenting generated solution!")
-        print(solution_response)
-
         panel_pk = solution_response['panel_pk']
         panel = SolarPanel.objects.get(pk=panel_pk)
         battery = Battery.objects.get(id=solution_response['battery_pk'])
@@ -135,14 +132,9 @@ class ProjectProposal(TemplateView):
         inverter = Inverter.objects.get(id=solution_response['inverter_pk'])
 
 
-        total_price = (panel.price * solution_response['panel_amount'] +
-                       battery.price * solution_response['battery_amount'] +
-                       inverter.price * solution_response['inverter_amount'])
-
-        # horizon of 10 years
-        cost_per_day = total_price / (365 * 12 * 10)
-
-        cost_per_watt = total_price / solution_response['total_watts']
+        total_price = solution_response['total_price'] + \
+                       solution_response['total_battery_price'] + \
+                       solution_response['total_inverter_price']
 
         if not panel_pk:
             redirect(reverse('index'))
@@ -160,8 +152,8 @@ class ProjectProposal(TemplateView):
             'inverter_amount': solution_response['inverter_amount'],
             'total_weight': solution_response['total_weight'],
             'total_area': solution_response['total_area'],
-            'cost_per_watt': "{:0.2f}".format(cost_per_watt),
-            'cost_per_day': "{:0.4f}".format(cost_per_day)
+            'cost_per_watt': "{:0.2f}".format(solution_response['cost_per_watt']),
+            #'cost_per_hour': "{:0.2f}".format(solution_response['cost_per_hour'])
         })
 
         return context

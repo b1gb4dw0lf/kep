@@ -80,7 +80,6 @@ class Rules:
                 pass
 
         with ruleset("solution"):
-
             @when_all(+m.panel_pk & +m.panel_amount)
             def calculate_total_weight(c):
                 panel = SolarPanel.objects.get(pk=c.m.panel_pk)
@@ -89,7 +88,17 @@ class Rules:
             @when_all(+m.panel_pk & +m.panel_amount)
             def calculate_total_area(c):
                 panel = SolarPanel.objects.get(pk=c.m.panel_pk)
-                self.response.update({"total_weight": panel.area * c.m.panel_amount})
+                self.response.update({"total_area": panel.area * c.m.panel_amount})
+
+            @when_all(+m.total_price & +m.total_watts)
+            def calculate_cost_per_watt(c):
+                self.response['cost_per_watt'] = c.m.total_price / c.m.total_watts
+
+            @when_all(+m.total_price & +m.total_watts & +m.location_wattage & +m.panel_efficiency)
+            def calculate_cost_per_hour(c):
+                total_watt_twenty_years = (c.m.total_watts / 1000) * c.m.location_wattage \
+                                          * 365 * 20 * c.m.panel_efficiency
+                self.response['cost_per_hour'] = c.m.total_price / total_watt_twenty_years
 
     # Called in home/views
     def get_proposal(self, input_):
@@ -104,7 +113,7 @@ class Rules:
         self.response = {}
         input_ = preformat_json(input_)
         assert_fact("panels", input_)
-        self.response["electricity"] = input_["electricity"]
+        self.response["electricity"] = input_["electricity"] * 1000
         self.response["max_budget"] = input_["max_budget"]
         return self.response
 
@@ -124,9 +133,10 @@ class Rules:
             **get_chosen_battery(battery_budget, input_["electricity"]),
         }
         response["uid"] = str(uuid4())
+        print(response)
         assert_fact("solution", response)
         self.response.update(response)
-        print(response)
+        print(self.response)
         return self.response
 
 
@@ -136,41 +146,29 @@ def get_choosen_panel(max_budget, electricity):
     total_watts = 0
     total_panels = 0
 
-    previously_best_panel = None
-    for p in SolarPanel.objects.all().order_by("watts"):
-        if p.watts < electricity:
-            previously_best_panel = p
-        else:
-            break
+    for p in SolarPanel.objects.all():
+        panel_amount = round(electricity / p.watts)
+        panel_watts = panel_amount * p.watts
+        panels_price = panel_amount * p.price
 
-    # need to compose of multiple panels
-    total_panels = 0
-    if not previously_best_panel:
-        p = SolarPanel.objects.order_by("-watts").first()
-        panel_amount = math.ceil(electricity / p.watts)
-        total_watts = panel_amount * panel_watts
-        panel = p
-        total_area = panel.area * amount
-    else:
-        p = previously_best_panel
-        panel_amount = 1
-        total_watts = p.watts
-        panel = p
-        total_area = panel.area
+        if (total_price == 0 and (panels_price < max_budget)) or (panels_price < total_price) \
+                and panel_watts < electricity:
+            panel = p
+            total_price = panels_price
+            total_watts = panel_watts
+            total_panels = panel_amount
 
     return {
-        "panel_pk": panel.pk,
-        "total_watts": total_watts,
-        "total_area": total_area,
-        "panel_amount": panel_amount,
+        'panel_pk': panel.pk,
+        'total_price': total_price,
+        'total_watts': total_watts,
+        'panel_amount': total_panels
     }
 
 
 def get_chosen_inverter(max_budget, electricity):
     inverter = None
-    inverter_price = 0
-    inverter_watts = 0
-    inverter_amount = 0
+    total_inverters = 0
 
     previously_best_inverter = None
     for i in Inverter.objects.all().order_by("watts"):
@@ -180,57 +178,57 @@ def get_chosen_inverter(max_budget, electricity):
             break
 
     # need to compose of multiple inverters
-    total_inverters = 0
     if not previously_best_inverter:
         i = Inverter.objects.order_by("-watts").first()
-        inverter_amount = math.ceil(electricity / i.watts)
-        total_watts = inverter_amount * inverter_watts
+        total_inverters = math.ceil(electricity / i.watts)
         inverter = i
-        total_price = inverter_amount * i.price
+        total_price = total_inverters * i.price
     else:
         i = previously_best_inverter
-        inverter_amount = 1
+        total_inverters = 1
         total_price = i.price
-        total_watts = i.watts
         inverter = i
 
     return {
         "inverter_pk": inverter.pk,
-        "inverter_price": inverter_price,
-        "inverter_amount": inverter_amount,
+        "inverter_price": inverter.price,
+        "total_inverter_price": total_price,
+        "inverter_amount": total_inverters,
     }
 
 
-def get_chosen_battery(max_budget, amper_hours):
+def get_chosen_battery(max_budget, electricity):
     battery = None
-    battery_price = 0
-    battery_watts = 0
+    best_watts = 0
+    previously_best_battery = None
     battery_amount = 0
 
-    previously_best_battery = None
     for b in Battery.objects.all().order_by("amper_hours"):
-        if b.amper_hours < amper_hours:
+        battery_watts = b.amper_hours * b.voltage
+        if best_watts < battery_watts < electricity:
+            best_watts = battery_watts
             previously_best_battery = b
         else:
             break
 
     # need to compose of multiple batterys
-    total_batterys = 0
     if not previously_best_battery:
         # get the battery with largest possible capacity
         b = Battery.objects.order_by("-amper_hours").first()
-        battery_amount = math.ceil(amper_hours / b.amper_hours)
+        battery_watts = b.amper_hours * b.voltage
+        battery_amount = max([math.ceil(electricity / battery_watts), 1])
+        battery = b
     else:
         b = previously_best_battery
+        battery = b
         battery_amount = 1
 
-    battery = b
-    total_price = b.price * battery_amount
-    total_watts = b.amper_hours * battery_amount
+    total_price = battery.price * battery_amount
 
     return {
         "battery_pk": battery.pk,
-        "battery_price": battery_price,
+        "battery_price": battery.price,
+        "total_battery_price": total_price,
         "battery_amount": battery_amount,
     }
 
