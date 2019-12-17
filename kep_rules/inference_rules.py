@@ -31,7 +31,7 @@ class Rules:
 
             @when_all(m.max_temperature < 35)
             def is_poly_crystalline(c):
-                if self.response["materials"]:
+                if "maeterials" in self.response:
                     self.response["materials"].append("poly-crystalline")
                 else:
                     self.response["materials"] = ["poly-crystalline"]
@@ -152,11 +152,18 @@ def get_choosen_panel(max_budget, electricity):
         panels_price = panel_amount * p.price
 
         if (total_price == 0 and (panels_price < max_budget)) or (panels_price < total_price) \
-                and panel_watts < electricity:
+                and panel_watts >= electricity:
             panel = p
             total_price = panels_price
             total_watts = panel_watts
             total_panels = panel_amount
+
+    # fallback
+    if not panel:
+        panel = p
+        total_price = panels_price
+        total_watts = panel_watts
+        total_panels = panel_amount
 
     return {
         'panel_pk': panel.pk,
