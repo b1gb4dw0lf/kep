@@ -131,7 +131,7 @@ STATICFILES_DIRS = [
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 LOGGING = {
     'version': 1,
-    'disable_existing_loggers': False,
+    'disable_existing_loggers': True,  # set to false if you want to see URL requests
     'formatters': {
         'verbose': {
             'format': 'RULE({asctime}): "{message}"',

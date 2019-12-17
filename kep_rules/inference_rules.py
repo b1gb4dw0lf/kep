@@ -176,7 +176,7 @@ def get_choosen_panel(max_budget, electricity):
     total_watts = 0
     total_panels = 0
 
-    logger.info(f'Selecting solar panel using cheapest price criterium.')
+    logger.info(f'Selecting solar panel using cheapest price criterium from total {SolarPanel.objects.count()} choices.')
     for p in SolarPanel.objects.all():
         panel_amount = round(electricity / p.watts)
         panel_watts = panel_amount * p.watts
@@ -209,7 +209,7 @@ def get_chosen_inverter(max_budget, electricity):
     inverter = None
     total_inverters = 0
 
-    logger.info(f'Selecting inverter using electricity fit criterium.')
+    logger.info(f'Selecting inverter using electricity fit criterium from total {Inverter.objects.count()} choices.')
     previously_best_inverter = None
     for i in Inverter.objects.all().order_by("watts"):
         if i.watts < electricity:
@@ -243,7 +243,7 @@ def get_chosen_battery(max_budget, electricity):
     previously_best_battery = None
     battery_amount = 0
 
-    logger.info(f'Selecting battery using electricity storage fit criterium.')
+    logger.info(f'Selecting battery using electricity storage fit criterium from total {Battery.objects.count()} choices.')
     for b in Battery.objects.all().order_by("amper_hours"):
         battery_watts = b.amper_hours * b.voltage
         if best_watts < battery_watts < electricity:
