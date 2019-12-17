@@ -31,7 +31,7 @@ class Rules:
 
             @when_all(m.max_temperature < 35)
             def is_poly_crystalline(c):
-                if "maeterials" in self.response:
+                if "materials" in self.response:
                     self.response["materials"].append("poly-crystalline")
                 else:
                     self.response["materials"] = ["poly-crystalline"]
