@@ -218,7 +218,7 @@ def get_chosen_battery(max_budget, amper_hours):
     total_batterys = 0
     if not previously_best_battery:
         # get the battery with largest possible capacity
-        b = battery.objects.order_by("-watts").first()
+        b = Battery.objects.order_by("-amper_hours").first()
         battery_amount = math.ceil(amper_hours / b.amper_hours)
     else:
         b = previously_best_battery
