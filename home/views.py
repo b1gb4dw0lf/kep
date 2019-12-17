@@ -6,7 +6,9 @@ from uuid import uuid4
 from .models import SolarPanel, Battery, Inverter
 from django.shortcuts import redirect, reverse
 from urllib.parse import urlencode, parse_qs
+import logging
 
+logger = logging.getLogger(__name__)
 
 rule_engine = Rules()
 
@@ -135,6 +137,7 @@ class ProjectProposal(TemplateView):
         total_price = solution_response['total_price'] + \
                        solution_response['total_battery_price'] + \
                        solution_response['total_inverter_price']
+        logger.info(f'Calculating final price using composotion rule. Total price: {total_price}.')
 
         if not panel_pk:
             redirect(reverse('index'))
@@ -155,5 +158,6 @@ class ProjectProposal(TemplateView):
             'cost_per_watt': "{:0.2f}".format(solution_response['cost_per_watt']),
             #'cost_per_hour': "{:0.2f}".format(solution_response['cost_per_hour'])
         })
+        logger.info(f'Presentation: Displaying results to user.')
 
         return context

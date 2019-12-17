@@ -3,7 +3,16 @@ from decimal import Decimal
 from home.models import *
 import math
 from uuid import uuid4
+from django_countries import countries
+import logging
 
+logger = logging.getLogger(__name__)
+print(__name__)
+
+THIN_FILM_TEMPERATURE = 50
+MONO_CRYSTALLINE_TEMPERATURE = 35
+
+ELECTRICITY_HOME_BOUNDARY = 500000
 
 class Rules:
     response = {}
@@ -11,67 +20,80 @@ class Rules:
     def __init__(self):
         with ruleset("panels"):
 
-            @when_all(m.max_temperature >= 50)
+            @when_all(m.max_temperature >= THIN_FILM_TEMPERATURE)
             def is_thin_film(c):
+                kind = "thin-film"
+                logger.info(f'Max temperature over {THIN_FILM_TEMPERATURE}. Inferencing "{kind}".')
                 if "materials" in self.response:
-                    self.response["materials"].append("thin-film")
+                    self.response["materials"].append(kind)
                 else:
                     self.response["materials"] = [
-                        "thin-film",
+                        kind,
                     ]
 
-            @when_all(m.max_temperature >= 35)
+            @when_all((m.max_temperature >= MONO_CRYSTALLINE_TEMPERATURE) & (m.max_temperature < THIN_FILM_TEMPERATURE))
             def is_mono_crystalline(c):
+                kind = "mono-crystalline"
+                logger.info(f'Max temperature over {MONO_CRYSTALLINE_TEMPERATURE}. Inferencing "{kind}".')
                 if "materials" in self.response:
-                    self.response["materials"].append("mono-crystalline")
+                    self.response["materials"].append(kind)
                 else:
                     self.response["materials"] = [
-                        "mono-crystalline",
+                        kind,
                     ]
 
-            @when_all(m.max_temperature < 35)
+            @when_all(m.max_temperature < MONO_CRYSTALLINE_TEMPERATURE)
             def is_poly_crystalline(c):
+                kind = "poly-crystalline"
+                logger.info(f'Max temperature under {MONO_CRYSTALLINE_TEMPERATURE}. Inferencing "{kind}".')
                 if "materials" in self.response:
-                    self.response["materials"].append("poly-crystalline")
+                    self.response["materials"].append(kind)
                 else:
-                    self.response["materials"] = ["poly-crystalline"]
+                    self.response["materials"] = [kind]
 
             @when_all((+m.country))
-            def calculate_ecost_and_lux(c):
+            def calculate_ecost_and_lux(country):
+                logger.info(f'Calulating lux and cpw for country {countries[country.m["country"]]}.')
                 self.response["cpw"] = 0.20
                 self.response["lux"] = 100
-                c.assert_fact(
+                country.assert_fact(
                     {
-                        "uid": c.m.uid,
+                        "uid": country.m.uid,
                         "cpw": 0.20,
                         "lux": 100,
-                        "inclination": c.m.inclination,
+                        "inclination": country.m.inclination,
                     }
                 )
 
             @when_all((+m.lux) & (+m.inclination))
             def calculate_practical_lux(c):
                 self.response["p_lux"] = c.m.lux - (c.m.lux * c.m.inclination)
+                logger.info(f'Based on lux and inclination practical lux is {self.response["p_lux"]}.')
 
-            @when_all(m.electricity < 500000)
+            @when_all(m.electricity < ELECTRICITY_HOME_BOUNDARY)
             def small_home_inverter(c):
+                logger.info(f'Electricity requirement smaller than {ELECTRICITY_HOME_BOUNDARY}. Selecting "home" inverter.')
                 self.response["inverter"] = "home"
 
-            @when_all(m.electricity >= 500000)
+            @when_all(m.electricity >= ELECTRICITY_HOME_BOUNDARY)
             def commercial_inverter(c):
+                logger.info(f'Electricity requirement bigger than {ELECTRICITY_HOME_BOUNDARY}. Selecting "central" inverter.')
                 self.response["inverter"] = "central"
 
-            @when_all((m.electricity < 500000) & (m.grid_type == "on-grid"))
+            @when_all((m.electricity < ELECTRICITY_HOME_BOUNDARY) & (m.grid_type == "on-grid"))
             def user_on_grid(c):
+                logger.info(f'Grid type is "on-grid". Setting battery requirement to False.')
                 self.response["battery"] = False
 
-            @when_all((m.electricity < 500000) & (m.grid_type == "off-grid"))
+            @when_all((m.electricity < ELECTRICITY_HOME_BOUNDARY) & (m.grid_type == "off-grid"))
             def user_on_grid(c):
+                logger.info(f'Grid type is "off-grid". Setting battery requirement to True.')
                 self.response["battery"] = True
                 c.assert_fact({"has_battery": True})
 
             @when_all((m.has_battery == True) | (m.has_smart_monitoring == True))
             def power_conditioning_unit(c):
+                logger.info(f'System has smart monitoring. Setting charge_controller requirement to True.')
                 self.response["charge_controller"] = True
                 c.assert_fact({"has_charge_controller": True})
 
@@ -84,21 +106,25 @@ class Rules:
             def calculate_total_weight(c):
                 panel = SolarPanel.objects.get(pk=c.m.panel_pk)
                 self.response.update({"total_weight": panel.weight * c.m.panel_amount})
+                logger.info(f'Calculated all panels total weight to: {self.response["total_weight"]}.')
 
             @when_all(+m.panel_pk & +m.panel_amount)
             def calculate_total_area(c):
                 panel = SolarPanel.objects.get(pk=c.m.panel_pk)
                 self.response.update({"total_area": panel.area * c.m.panel_amount})
+                logger.info(f'Calculated all panels total area to: {self.response["total_area"]}.')
 
             @when_all(+m.total_price & +m.total_watts)
             def calculate_cost_per_watt(c):
                 self.response['cost_per_watt'] = c.m.total_price / c.m.total_watts
+                logger.info(f'Calculated cost per watt to: {self.response["cost_per_watt"]}.')
 
             @when_all(+m.total_price & +m.total_watts & +m.location_wattage & +m.panel_efficiency)
             def calculate_cost_per_hour(c):
                 total_watt_twenty_years = (c.m.total_watts / 1000) * c.m.location_wattage \
                                           * 365 * 20 * c.m.panel_efficiency
                 self.response['cost_per_hour'] = c.m.total_price / total_watt_twenty_years
+                logger.info(f'Calculated cost per hour to: {self.response["cost_per_hour"]}.')
 
     # Called in home/views
     def get_proposal(self, input_):
@@ -120,23 +146,27 @@ class Rules:
     def get_solution(self, input_):
         self.response = {}
         input_ = preformat_json(input_)
+
         panels_budget = 0.4 * input_["max_budget"]
-        response = get_choosen_panel(panels_budget, input_["electricity"])
         inverter_budget = input_["max_budget"] * 0.4
+        battery_budget = input_["max_budget"] * 0.2
+        logger.info(f'Price composition rule splitted budget to: panels - {panels_budget}, inverter - {inverter_budget}, battery - {battery_budget}.')
+        response = get_choosen_panel(panels_budget, input_["electricity"])
         response = {
             **response,
             **get_chosen_inverter(inverter_budget, input_["electricity"]),
         }
-        battery_budget = input_["max_budget"] * 0.2
         response = {
             **response,
             **get_chosen_battery(battery_budget, input_["electricity"]),
         }
+        logger.info(f'Chosen solar panel componenent(s): {response["panel_amount"]} x {SolarPanel.objects.get(id=response["panel_pk"])}')
+        logger.info(f'Chosen inverter component(s): {response["inverter_amount"]} x {Inverter.objects.get(id=response["inverter_pk"])}')
+        logger.info(f'Chosen battery component(s): {response["battery_amount"]} x {Battery.objects.get(id=response["battery_pk"])}')
         response["uid"] = str(uuid4())
-        print(response)
         assert_fact("solution", response)
+        logger.info(f'Solution for the system found. Proceeding with presentation of final solution.')
         self.response.update(response)
-        print(self.response)
         return self.response
 
 
@@ -146,6 +176,7 @@ def get_choosen_panel(max_budget, electricity):
     total_watts = 0
     total_panels = 0
 
+    logger.info(f'Selecting solar panel using cheapest price criterium.')
     for p in SolarPanel.objects.all():
         panel_amount = round(electricity / p.watts)
         panel_watts = panel_amount * p.watts
@@ -160,6 +191,7 @@ def get_choosen_panel(max_budget, electricity):
 
     # fallback
     if not panel:
+        logger.info(f'Solar panel optimal solution not found. Using fallback.')
         panel = p
         total_price = panels_price
         total_watts = panel_watts
@@ -177,6 +209,7 @@ def get_chosen_inverter(max_budget, electricity):
     inverter = None
     total_inverters = 0
 
+    logger.info(f'Selecting inverter using electricity fit criterium.')
     previously_best_inverter = None
     for i in Inverter.objects.all().order_by("watts"):
         if i.watts < electricity:
@@ -210,6 +243,7 @@ def get_chosen_battery(max_budget, electricity):
     previously_best_battery = None
     battery_amount = 0
 
+    logger.info(f'Selecting battery using electricity storage fit criterium.')
     for b in Battery.objects.all().order_by("amper_hours"):
         battery_watts = b.amper_hours * b.voltage
         if best_watts < battery_watts < electricity:
