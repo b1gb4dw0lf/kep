@@ -180,7 +180,7 @@ class ProjectProposal(TemplateView):
             'total_weight': solution_response['total_weight'],
             'total_area': solution_response['total_area'],
             'cost_per_watt': "{:0.2f}".format(solution_response['cost_per_watt']),
-            #'cost_per_hour': "{:0.2f}".format(solution_response['cost_per_hour'])
+            'cost_per_hour': "{:0.2f}".format(solution_response['cost_per_hour'])
         })
         logger.info(f'Presentation: Displaying results to user.')
 

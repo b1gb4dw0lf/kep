@@ -97,6 +97,13 @@ class Rules:
                 self.response["charge_controller"] = True
                 c.assert_fact({"has_charge_controller": True})
 
+            @when_all(+m.country)
+            def country_watt_per_metre2(c):
+                if c.m.country == 'NL':
+                    self.response['watt_per_metre2'] = 2.6
+                    logger.info('Watt per metre square for {} is {} kW'
+                                .format(c.m.country, self.response['watt_per_metre2']))
+
             @when_all(+m.shape)
             def available_shapes(c):
                 pass
@@ -114,16 +121,21 @@ class Rules:
                 self.response.update({"total_area": panel.area * c.m.panel_amount})
                 logger.info(f'Calculated all panels total area to: {self.response["total_area"]}.')
 
-            @when_all(+m.total_price & +m.total_watts)
+            @when_all(+m.total_price & +m.total_watts & +m.total_inverter_price & +m.total_battery_price)
             def calculate_cost_per_watt(c):
-                self.response['cost_per_watt'] = c.m.total_price / c.m.total_watts
+                total_price = c.m.total_price + \
+                              c.m.total_inverter_price + c.m.total_battery_price
+                self.response['cost_per_watt'] = total_price / c.m.total_watts
                 logger.info(f'Calculated cost per watt to: {self.response["cost_per_watt"]}.')
 
-            @when_all(+m.total_price & +m.total_watts & +m.location_wattage & +m.panel_efficiency)
+            @when_all(+m.total_price & +m.total_inverter_price & +m.total_battery_price
+                      & +m.total_watts & +m.watt_per_metre2)
             def calculate_cost_per_hour(c):
-                total_watt_twenty_years = (c.m.total_watts / 1000) * c.m.location_wattage \
-                                          * 365 * 20 * c.m.panel_efficiency
-                self.response['cost_per_hour'] = c.m.total_price / total_watt_twenty_years
+                total_price = c.m.total_price + \
+                              c.m.total_inverter_price + c.m.total_battery_price
+                total_watt_ten_years = (c.m.total_watts / 1000) * c.m.watt_per_metre2 \
+                                          * 365 * 10 * 0.8
+                self.response['cost_per_hour'] = total_price / total_watt_ten_years
                 logger.info(f'Calculated cost per hour to: {self.response["cost_per_hour"]}.')
 
     # Called in home/views
@@ -147,9 +159,9 @@ class Rules:
         self.response = {}
         input_ = preformat_json(input_)
 
-        panels_budget = 0.4 * input_["max_budget"]
+        panels_budget = 0.5 * input_["max_budget"]
         inverter_budget = input_["max_budget"] * 0.4
-        battery_budget = input_["max_budget"] * 0.2
+        battery_budget = input_["max_budget"] * 0.1
         logger.info(f'Price composition rule splitted budget to: panels - {panels_budget}, inverter - {inverter_budget}, battery - {battery_budget}.')
         response = get_choosen_panel(panels_budget, input_["electricity"])
         response = {
@@ -164,6 +176,7 @@ class Rules:
         logger.info(f'Chosen inverter component(s): {response["inverter_amount"]} x {Inverter.objects.get(id=response["inverter_pk"])}')
         logger.info(f'Chosen battery component(s): {response["battery_amount"]} x {Battery.objects.get(id=response["battery_pk"])}')
         response["uid"] = str(uuid4())
+        response.update({'watt_per_metre2': float(input_['watt_per_metre2'])})
         assert_fact("solution", response)
         logger.info(f'Solution for the system found. Proceeding with presentation of final solution.')
         self.response.update(response)
@@ -207,6 +220,39 @@ def get_choosen_panel(max_budget, electricity):
 
 def get_chosen_inverter(max_budget, electricity):
     inverter = None
+    total_price = 0
+    total_inverters = 0
+
+    logger.info(
+        f'Selecting inverter using cheapest price criterium from total {Inverter.objects.count()} choices.')
+    for p in Inverter.objects.all():
+        inverter_amount = round(electricity / p.watts)
+        inverter_watts = inverter_amount * p.watts
+        inverters_price = inverter_amount * p.price
+
+        if (total_price == 0 and (inverters_price < max_budget)) or (inverters_price < total_price) \
+                and inverter_watts >= electricity:
+            inverter = p
+            total_price = inverters_price
+            total_inverters = inverter_amount
+
+    # fallback
+    if not inverter:
+        logger.info(f'Inverter optimal solution not found. Using fallback.')
+        inverter = p
+        total_price = inverters_price
+        total_inverters = inverter_amount
+
+    return {
+        'inverter_pk': inverter.pk,
+        'inverter_price': inverter.price,
+        'total_inverter_price': total_price,
+        'inverter_amount': total_inverters
+    }
+
+
+def get_commercial_chosen_inverter(max_budget, electricity):
+    inverter = None
     total_inverters = 0
 
     logger.info(f'Selecting inverter using electricity fit criterium from total {Inverter.objects.count()} choices.')
@@ -238,6 +284,40 @@ def get_chosen_inverter(max_budget, electricity):
 
 
 def get_chosen_battery(max_budget, electricity):
+    battery = None
+    total_price = 0
+    total_batterys = 0
+
+    logger.info(
+        f'Selecting battery using cheapest price criterium from total {Battery.objects.count()} choices.')
+    for p in Battery.objects.all():
+        p_watts = p.voltage * p.amper_hours
+        battery_amount = round(electricity / p_watts)
+        battery_watts = battery_amount * p_watts
+        batterys_price = battery_amount * p.price
+
+        if (total_price == 0 and (batterys_price < max_budget)) or (batterys_price < total_price) \
+                and battery_watts >= electricity:
+            battery = p
+            total_price = batterys_price
+            total_batterys = battery_amount
+
+    # fallback
+    if not battery:
+        logger.info(f'Battery optimal solution not found. Using fallback.')
+        battery = p
+        total_price = batterys_price
+        total_batterys = battery_amount
+
+    return {
+        'battery_pk': battery.pk,
+        'battery_price': battery.price,
+        'total_battery_price': total_price,
+        'battery_amount': total_batterys
+    }
+
+
+def get_commercial_chosen_battery(max_budget, electricity):
     battery = None
     best_watts = 0
     previously_best_battery = None
