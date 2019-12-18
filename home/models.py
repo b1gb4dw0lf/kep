@@ -76,6 +76,7 @@ class Battery(SolarGridComponent):
     voltage = models.IntegerField(help_text='Voltage')
     amper_hours = models.IntegerField(help_text='Amper Hours')
     kind = models.CharField(max_length=255)
+    type = models.CharField(choices=[('home', 'Home'), ('commercial', 'Commercial')], max_length=255)
 
     class Meta:
         verbose_name = 'Battery'
@@ -91,3 +92,5 @@ class Inverter(SolarGridComponent):
     output_voltage = models.IntegerField(help_text='Output voltage')
     watts = models.IntegerField(help_text='Watts')
     kind = models.CharField(max_length=255)
+    type = models.CharField(choices=[('home', 'Home'), ('commercial', 'Commercial')], max_length=255)
+

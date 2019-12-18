@@ -107,25 +107,26 @@ class CommercialFormView(SuccessMessageMixin, FormView):
         """
         # From here the form is validated and we can do rule chaining etc
 
-        form = clean_form_common(form)
-        if form is None:
-            return self.form_invalid(form)
-
-        land_area = form.cleaned_data['land_area']
-        materials = form.cleaned_data['materials']
-        price_per_watt = form.cleaned_data['price_per_watt']
-
-        if not price_per_watt and not land_area and not electricity and not materials:
+        if 'land_area' not in form.cleaned_data:
             form.add_error(None, "Submission Failed: You have to supply more info")
             return self.form_invalid(form)
 
-        logger.info(f'Starting inference of rules using requiements {form.cleaned_data}')
+        form.cleaned_data['land_area'] = int(form.cleaned_data['land_area'])
+
+        input_ ={}
+
+        for k, v in form.cleaned_data.items():
+            if v is not None:
+                input_[k] = v
+
+        logger.info(f'Starting inference of rules using requiements {input_}')
         user_id = uuid4()
         rule_req = {'uid': str(user_id)}
-        rule_req.update(form.cleaned_data)
+        rule_req.update(input_)
         retres = rule_engine.get_proposal(rule_req)
         retres['materials'] = ",".join(retres['materials'])
-        return redirect(reverse('solution_view') + "?" + urlencode(retres) + "#solution")
+
+        return redirect(reverse('solution_view') + "?" + urlencode(retres) + "&user_type=commercial" + "#solution")
 
 
 class ProjectProposal(TemplateView):
@@ -143,10 +144,15 @@ class ProjectProposal(TemplateView):
             if key != 'materials':
                 params[key] = "".join(params[key])
 
-        params['electricity'] = float(params['electricity'])
-        params['max_budget'] = int(params['max_budget'])
+        if 'electricity' in params:
+            params['electricity'] = float(params['electricity'])
+        if 'max_budget' in params:
+            params['max_budget'] = int(params['max_budget'])
 
-        solution_response = rule_engine.get_solution(params)
+        if params['user_type'] == 'home':
+            solution_response = rule_engine.get_solution(params)
+        elif params['user_type'] == 'commercial':
+            solution_response = rule_engine.get_commercial_solution(params)
 
         panel_pk = solution_response['panel_pk']
         panel = SolarPanel.objects.get(pk=panel_pk)
@@ -168,13 +174,13 @@ class ProjectProposal(TemplateView):
         context.update({'inverter': inverter})
 
         context.update({
-            'total_price': self.total_price,
-            'total_watt': "{:0.2f}".format(solution_response['total_watts'] / 1000),
+            'total_price': "{:0.2f}".format(self.total_price),
+            'total_watt': "{:0.3f}".format(solution_response['total_watts'] / 1000),
             'total_panels': solution_response['panel_amount'],
             'battery_amount': solution_response['battery_amount'],
             'inverter_amount': solution_response['inverter_amount'],
-            'total_weight': "{:0.2f}".format(solution_response['total_weight'] / 1000),
-            'total_area': "{:0.2f}".format(solution_response['total_area'] / 1000),
+            'total_weight': "{:0.3f}".format(solution_response['total_weight'] / 1000),
+            'total_area': "{:0.2f}".format(solution_response['total_area'] / 10000),
             'cost_per_watt': "{:0.2f}".format(solution_response['cost_per_watt']),
             'cost_per_hour': "{:0.2f}".format(solution_response['cost_per_hour'])
         })
@@ -183,7 +189,7 @@ class ProjectProposal(TemplateView):
         return context
 
     def render_to_response(self, context, **response_kwargs):
-        if self.total_price > int(self.params['max_budget']):
+        if 'max_budget' in self.params and self.total_price > int(self.params['max_budget']):
             messages.add_message(self.request, messages.INFO,
                                  'We cannot offer you any solution with given parameters. Please try with different inputs.')
             return redirect(reverse(str(self.params['user_type'])) + "#get-advice")
