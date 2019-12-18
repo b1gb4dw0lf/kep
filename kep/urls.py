@@ -20,7 +20,7 @@ from home.views import IndexView, UserFormView, CommercialFormView, ProjectPropo
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', IndexView.as_view(), name='index'),
-    path('huser/', UserFormView.as_view()),
-    path('cuser/', CommercialFormView.as_view()),
+    path('huser/', UserFormView.as_view(), name='huser'),
+    path('cuser/', CommercialFormView.as_view(), name='cuser'),
     path('solution/', ProjectProposal.as_view(), name='solution_view'),
 ]

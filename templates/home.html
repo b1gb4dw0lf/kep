@@ -81,7 +81,7 @@
                     {% if messages %}
                     <div class="uk-margin">
                         {% for message in messages %}
-                        <div class="uk-alert-success" uk-alert>
+                        <div class="uk-alert-warning" uk-alert>
                                 <a class="uk-alert-close" uk-close></a>
                                 <p>{{ message }}</p>
                             </div>
@@ -209,9 +209,9 @@
                     <li>Cell Type: {{panel.material|title}}</li>
                     <li>{{battery_amount}} x {{battery}}</li>
                     <li>{{inverter_amount}} x {{inverter}}</li>
-                    <li>Total Weight: {{total_weight}} grams</li>
-                    <li>Total Area: {{total_area}} cm2</li>
-                    <li>Total Wattage: {{total_watt}} Watts</li>
+                    <li>Total Weight: {{total_weight}} kg</li>
+                    <li>Total Area: {{total_area}} m2</li>
+                    <li>Total Wattage: {{total_watt}} kW</li>
                     <li>Cost per Watt: ${{cost_per_watt}}</li>
                     <li>Cost per kW/Hour (10 year horizon): ${{cost_per_hour}}</li>
                     <li>Total Price: ${{total_price}}</li>

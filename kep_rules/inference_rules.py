@@ -163,7 +163,7 @@ class Rules:
         inverter_budget = input_["max_budget"] * 0.4
         battery_budget = input_["max_budget"] * 0.1
         logger.info(f'Price composition rule splitted budget to: panels - {panels_budget}, inverter - {inverter_budget}, battery - {battery_budget}.')
-        response = get_choosen_panel(panels_budget, input_["electricity"])
+        response = get_choosen_panel(panels_budget, input_["electricity"], input_["materials"])
         response = {
             **response,
             **get_chosen_inverter(inverter_budget, input_["electricity"]),
@@ -183,14 +183,14 @@ class Rules:
         return self.response
 
 
-def get_choosen_panel(max_budget, electricity):
+def get_choosen_panel(max_budget, electricity, materials):
     panel = None
     total_price = 0
     total_watts = 0
     total_panels = 0
 
     logger.info(f'Selecting solar panel using cheapest price criterium from total {SolarPanel.objects.count()} choices.')
-    for p in SolarPanel.objects.all():
+    for p in SolarPanel.objects.filter(material__in=materials):
         panel_amount = round(electricity / p.watts)
         panel_watts = panel_amount * p.watts
         panels_price = panel_amount * p.price
@@ -305,7 +305,7 @@ def get_chosen_battery(max_budget, electricity):
     # fallback
     if not battery:
         logger.info(f'Battery optimal solution not found. Using fallback.')
-        battery = p
+        battery = Battery.objects.sorted_by('price').first()
         total_price = batterys_price
         total_batterys = battery_amount
 

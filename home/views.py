@@ -1,5 +1,6 @@
 from django.views.generic import TemplateView, FormView
 from django.contrib.messages.views import SuccessMessageMixin
+from django.contrib import messages
 from kep_rules.inference_rules import Rules
 from .forms import *
 from uuid import uuid4
@@ -53,7 +54,6 @@ def clean_form_common(form):
     return form
 
 
-
 class UserFormView(SuccessMessageMixin, FormView):
     """View for handling collection of user requirements
     
@@ -84,8 +84,7 @@ class UserFormView(SuccessMessageMixin, FormView):
         retres = rule_engine.get_proposal(rule_req)
         retres['materials'] = ",".join(retres['materials'])
 
-
-        return redirect(reverse('solution_view') + "?" + urlencode(retres) + "#solution")
+        return redirect(reverse('solution_view') + "?" + urlencode(retres) + "&user_type=huser" + "#solution")
 
 
 class CommercialFormView(SuccessMessageMixin, FormView):
@@ -140,8 +139,6 @@ class ProjectProposal(TemplateView):
         context = super(ProjectProposal, self).get_context_data(**kwargs)
         params = self.params
 
-        total_area = 0
-
         for key in params:
             if key != 'materials':
                 params[key] = "".join(params[key])
@@ -157,11 +154,10 @@ class ProjectProposal(TemplateView):
 
         inverter = Inverter.objects.get(id=solution_response['inverter_pk'])
 
-
-        total_price = solution_response['total_price'] + \
+        self.total_price = solution_response['total_price'] + \
                        solution_response['total_battery_price'] + \
                        solution_response['total_inverter_price']
-        logger.info(f'Calculating final price using composotion rule. Total price: {total_price}.')
+        logger.info(f'Calculating final price using composotion rule. Total price: {self.total_price}.')
 
         if not panel_pk:
             redirect(reverse('index'))
@@ -172,16 +168,24 @@ class ProjectProposal(TemplateView):
         context.update({'inverter': inverter})
 
         context.update({
-            'total_price': total_price,
-            'total_watt': solution_response['total_watts'],
+            'total_price': self.total_price,
+            'total_watt': "{:0.2f}".format(solution_response['total_watts'] / 1000),
             'total_panels': solution_response['panel_amount'],
             'battery_amount': solution_response['battery_amount'],
             'inverter_amount': solution_response['inverter_amount'],
-            'total_weight': solution_response['total_weight'],
-            'total_area': solution_response['total_area'],
+            'total_weight': "{:0.2f}".format(solution_response['total_weight'] / 1000),
+            'total_area': "{:0.2f}".format(solution_response['total_area'] / 1000),
             'cost_per_watt': "{:0.2f}".format(solution_response['cost_per_watt']),
             'cost_per_hour': "{:0.2f}".format(solution_response['cost_per_hour'])
         })
         logger.info(f'Presentation: Displaying results to user.')
 
         return context
+
+    def render_to_response(self, context, **response_kwargs):
+        if self.total_price > int(self.params['max_budget']):
+            messages.add_message(self.request, messages.INFO,
+                                 'We cannot offer you any solution with given parameters. Please try with different inputs.')
+            return redirect(reverse(str(self.params['user_type'])) + "#get-advice")
+
+        return super(ProjectProposal, self).render_to_response(context, **response_kwargs)
