@@ -143,9 +143,22 @@
         <a id="solution"></a>
         Proposed Solution
     </h1>
+    {% if messages %}
+    <div class="uk-margin">
+        {% for message in messages %}
+        <div class="uk-alert-warning" uk-alert>
+            <a class="uk-alert-close" uk-close></a>
+            <p>{{ message }}</p>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
     <div class="uk-section uk-container">
+
         <div class="uk-child-width-1-2@m" uk-grid>
             <div>
+
                 {% if panel %}
                 <div class="uk-card uk-card-default uk-grid-collapse uk-child-width-1-2@s uk-margin" uk-grid>
                     <div class="uk-card-media-left uk-cover-container">

@@ -139,9 +139,9 @@ class ProjectProposal(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super(ProjectProposal, self).get_context_data(**kwargs)
-        try:
-            params = self.params
+        params = self.params
 
+        try:
             for key in params:
                 if key != 'materials':
                     params[key] = "".join(params[key])
@@ -194,15 +194,15 @@ class ProjectProposal(TemplateView):
         return context
 
     def render_to_response(self, context, **response_kwargs):
+        BUDGET_OFFSET = 1000
         if context.get('not_found', None):
             messages.add_message(self.request, messages.INFO,
                                  'We cannot offer you any solution with given parameters. Please try with different inputs or contact us for a free proposal.')
             return redirect(reverse(str(self.params['user_type'])) + "#get-advice")
-        elif 'max_budget' in self.params and self.total_price > int(self.params['max_budget']):
+        elif 'max_budget' in self.params and self.total_price  - BUDGET_OFFSET> int(self.params['max_budget']):
+            logger.info('Max budget over limit! Suggesting alternative.')
             messages.add_message(self.request, messages.INFO,
-                                 'We cannot offer you any solution with given parameters. Please try with different inputs or contact us for a free proposal.')
-            return redirect(reverse(str(self.params['user_type'])) + "#get-advice")
-
+                                 'We cannot offer you any solution with given parameters. On the page we offer you the first next most suited solution.')
 
 
         return super(ProjectProposal, self).render_to_response(context, **response_kwargs)
