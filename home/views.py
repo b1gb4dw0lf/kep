@@ -81,8 +81,11 @@ class UserFormView(SuccessMessageMixin, FormView):
         logger.info(f'Starting inference of rules using requiements {form.cleaned_data}')
         rule_req = {'uid': str(user_id)}
         rule_req.update(form.cleaned_data)
-        retres = rule_engine.get_proposal(rule_req)
-        retres['materials'] = ",".join(retres['materials'])
+        try:
+            retres = rule_engine.get_proposal(rule_req)
+            retres['materials'] = ",".join(retres['materials'])
+        except:
+            retres = {} 
 
         return redirect(reverse('solution_view') + "?" + urlencode(retres) + "&user_type=huser" + "#solution")
 
@@ -124,8 +127,11 @@ class CommercialFormView(SuccessMessageMixin, FormView):
         rule_req = {'uid': str(user_id)}
         rule_req.update(input_)
 
-        retres = rule_engine.get_proposal(rule_req)
-        retres['materials'] = ",".join(retres['materials'])
+        try:
+            retres = rule_engine.get_proposal(rule_req)
+            retres['materials'] = ",".join(retres['materials'])
+        except:
+            retres = {}
 
         return redirect(reverse('solution_view') + "?" + urlencode(retres) + "&user_type=commercial" + "#solution")
 
