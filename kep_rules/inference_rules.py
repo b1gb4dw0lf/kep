@@ -275,6 +275,14 @@ def get_commercial_choosen_panel(materials, electricity, land_area):
             solution_price = panel_amount * p.price
             solution_amount = panel_amount
 
+    # fallback
+    if not solution:
+        logger.info(f'Solar panel optimal solution not found. Using fallback.')
+        solution = SolarPanel.objects.first()
+        solution_price = solution_price
+        total_watts = total_watts
+        panel_amount = solution_amount
+
     return {
         'panel_pk': solution.pk,
         'total_price': solution_price,

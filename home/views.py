@@ -35,7 +35,7 @@ def clean_form_common(form):
     logger.info('Hard requirements are present and validated.')
 
     if max_budget:
-        form.cleaned_data['max_budget'] = int(form.cleaned_data['max_budget'])
+        form.cleaned_data['max_budget'] = int(float(form.cleaned_data['max_budget']))
 
     logger.info(f'Max budget requirement set to {max_budget}')
     if form.cleaned_data['min_temperature']:
@@ -96,7 +96,7 @@ class CommercialFormView(SuccessMessageMixin, FormView):
     """
     template_name = 'home.html'
     form_class = CommercialUserForm
-    success_url = '/cuser/#get-advice'
+    success_url = '/commercial/#get-advice'
     success_message = 'Submission Successful'
 
     def form_valid(self, form):
@@ -123,6 +123,7 @@ class CommercialFormView(SuccessMessageMixin, FormView):
         user_id = uuid4()
         rule_req = {'uid': str(user_id)}
         rule_req.update(input_)
+
         retres = rule_engine.get_proposal(rule_req)
         retres['materials'] = ",".join(retres['materials'])
 
@@ -138,60 +139,70 @@ class ProjectProposal(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super(ProjectProposal, self).get_context_data(**kwargs)
-        params = self.params
+        try:
+            params = self.params
 
-        for key in params:
-            if key != 'materials':
-                params[key] = "".join(params[key])
+            for key in params:
+                if key != 'materials':
+                    params[key] = "".join(params[key])
 
-        if 'electricity' in params:
-            params['electricity'] = float(params['electricity'])
-        if 'max_budget' in params:
-            params['max_budget'] = int(params['max_budget'])
+            if 'electricity' in params:
+                params['electricity'] = float(params['electricity'])
+            if 'max_budget' in params:
+                params['max_budget'] = int(float(params['max_budget']))
 
-        if params['user_type'] == 'home':
-            solution_response = rule_engine.get_solution(params)
-        elif params['user_type'] == 'commercial':
-            solution_response = rule_engine.get_commercial_solution(params)
+            if params['user_type'] == 'home':
+                solution_response = rule_engine.get_solution(params)
+            elif params['user_type'] == 'commercial':
+                solution_response = rule_engine.get_commercial_solution(params)
 
-        panel_pk = solution_response['panel_pk']
-        panel = SolarPanel.objects.get(pk=panel_pk)
-        battery = Battery.objects.get(id=solution_response['battery_pk'])
+            panel_pk = solution_response['panel_pk']
+            panel = SolarPanel.objects.get(pk=panel_pk)
+            battery = Battery.objects.get(id=solution_response['battery_pk'])
 
-        inverter = Inverter.objects.get(id=solution_response['inverter_pk'])
+            inverter = Inverter.objects.get(id=solution_response['inverter_pk'])
 
-        self.total_price = solution_response['total_price'] + \
-                       solution_response['total_battery_price'] + \
-                       solution_response['total_inverter_price']
-        logger.info(f'Calculating final price using composotion rule. Total price: {self.total_price}.')
+            self.total_price = solution_response['total_price'] + \
+                           solution_response['total_battery_price'] + \
+                           solution_response['total_inverter_price']
+            logger.info(f'Calculating final price using composotion rule. Total price: {self.total_price}.')
 
-        if not panel_pk:
-            redirect(reverse('index'))
+            if not panel_pk:
+                redirect(reverse('index'))
 
-        context.update({'panel': panel})
+            context.update({'panel': panel})
 
-        context.update({'battery': battery})
-        context.update({'inverter': inverter})
+            context.update({'battery': battery})
+            context.update({'inverter': inverter})
 
-        context.update({
-            'total_price': "{:0.2f}".format(self.total_price),
-            'total_watt': "{:0.3f}".format(solution_response['total_watts'] / 1000),
-            'total_panels': solution_response['panel_amount'],
-            'battery_amount': solution_response['battery_amount'],
-            'inverter_amount': solution_response['inverter_amount'],
-            'total_weight': "{:0.3f}".format(solution_response['total_weight'] / 1000),
-            'total_area': "{:0.2f}".format(solution_response['total_area'] / 10000),
-            'cost_per_watt': "{:0.2f}".format(solution_response['cost_per_watt']),
-            'cost_per_hour': "{:0.2f}".format(solution_response['cost_per_hour'])
-        })
-        logger.info(f'Presentation: Displaying results to user.')
+            context.update({
+                'total_price': "{:0.2f}".format(self.total_price),
+                'total_watt': "{:0.3f}".format(solution_response['total_watts'] / 1000),
+                'total_panels': solution_response['panel_amount'],
+                'battery_amount': solution_response['battery_amount'],
+                'inverter_amount': solution_response['inverter_amount'],
+                'total_weight': "{:0.3f}".format(solution_response['total_weight'] / 1000),
+                'total_area': "{:0.2f}".format(solution_response['total_area'] / 10000),
+                'cost_per_watt': "{:0.2f}".format(solution_response['cost_per_watt']),
+                'cost_per_hour': "{:0.2f}".format(solution_response['cost_per_hour'])
+            })
+            logger.info(f'Presentation: Displaying results to user.')
+        except:
+            context.update({'not_found': True})
+            return context
 
         return context
 
     def render_to_response(self, context, **response_kwargs):
         if 'max_budget' in self.params and self.total_price > int(self.params['max_budget']):
             messages.add_message(self.request, messages.INFO,
-                                 'We cannot offer you any solution with given parameters. Please try with different inputs.')
+                                 'We cannot offer you any solution with given parameters. Please try with different inputs or contact us for a free proposal.')
             return redirect(reverse(str(self.params['user_type'])) + "#get-advice")
+
+        elif context.get('not_found', None):
+            messages.add_message(self.request, messages.INFO,
+                                 'We cannot offer you any solution with given parameters. Please try with different inputs or contact us for a free proposal.')
+            return redirect(reverse(str(self.params['user_type'])) + "#get-advice")
+
 
         return super(ProjectProposal, self).render_to_response(context, **response_kwargs)

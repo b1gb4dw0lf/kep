@@ -21,6 +21,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', IndexView.as_view(), name='index'),
     path('huser/', UserFormView.as_view(), name='huser'),
-    path('cuser/', CommercialFormView.as_view(), name='cuser'),
+    path('commercial/', CommercialFormView.as_view(), name='commercial'),
     path('solution/', ProjectProposal.as_view(), name='solution_view'),
 ]
