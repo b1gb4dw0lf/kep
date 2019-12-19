@@ -151,7 +151,7 @@ class ProjectProposal(TemplateView):
             if 'max_budget' in params:
                 params['max_budget'] = int(float(params['max_budget']))
 
-            if params['user_type'] == 'home':
+            if params['user_type'] == 'huser':
                 solution_response = rule_engine.get_solution(params)
             elif params['user_type'] == 'commercial':
                 solution_response = rule_engine.get_commercial_solution(params)
