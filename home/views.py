@@ -194,15 +194,15 @@ class ProjectProposal(TemplateView):
         return context
 
     def render_to_response(self, context, **response_kwargs):
-        if 'max_budget' in self.params and self.total_price > int(self.params['max_budget']):
+        if context.get('not_found', None):
+            messages.add_message(self.request, messages.INFO,
+                                 'We cannot offer you any solution with given parameters. Please try with different inputs or contact us for a free proposal.')
+            return redirect(reverse(str(self.params['user_type'])) + "#get-advice")
+        elif 'max_budget' in self.params and self.total_price > int(self.params['max_budget']):
             messages.add_message(self.request, messages.INFO,
                                  'We cannot offer you any solution with given parameters. Please try with different inputs or contact us for a free proposal.')
             return redirect(reverse(str(self.params['user_type'])) + "#get-advice")
 
-        elif context.get('not_found', None):
-            messages.add_message(self.request, messages.INFO,
-                                 'We cannot offer you any solution with given parameters. Please try with different inputs or contact us for a free proposal.')
-            return redirect(reverse(str(self.params['user_type'])) + "#get-advice")
 
 
         return super(ProjectProposal, self).render_to_response(context, **response_kwargs)
