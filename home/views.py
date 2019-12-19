@@ -141,55 +141,55 @@ class ProjectProposal(TemplateView):
         context = super(ProjectProposal, self).get_context_data(**kwargs)
         params = self.params
 
-        for key in params:
-            if key != 'materials':
-                params[key] = "".join(params[key])
+        try:
+            for key in params:
+                if key != 'materials':
+                    params[key] = "".join(params[key])
 
-        if 'electricity' in params:
-            params['electricity'] = float(params['electricity'])
-        if 'max_budget' in params:
-            params['max_budget'] = int(float(params['max_budget']))
+            if 'electricity' in params:
+                params['electricity'] = float(params['electricity'])
+            if 'max_budget' in params:
+                params['max_budget'] = int(float(params['max_budget']))
 
-        if params['user_type'] == 'huser':
-            solution_response = rule_engine.get_solution(params)
-        elif params['user_type'] == 'commercial':
-            solution_response = rule_engine.get_commercial_solution(params)
+            if params['user_type'] == 'huser':
+                solution_response = rule_engine.get_solution(params)
+            elif params['user_type'] == 'commercial':
+                solution_response = rule_engine.get_commercial_solution(params)
 
-        panel_pk = solution_response['panel_pk']
-        panel = SolarPanel.objects.get(pk=panel_pk)
-        battery = Battery.objects.get(id=solution_response['battery_pk'])
+            panel_pk = solution_response['panel_pk']
+            panel = SolarPanel.objects.get(pk=panel_pk)
+            battery = Battery.objects.get(id=solution_response['battery_pk'])
 
-        inverter = Inverter.objects.get(id=solution_response['inverter_pk'])
+            inverter = Inverter.objects.get(id=solution_response['inverter_pk'])
 
-        self.total_price = solution_response['total_price'] + \
-                       solution_response['total_battery_price'] + \
-                       solution_response['total_inverter_price']
-        logger.info(f'Calculating final price using composotion rule. Total price: {self.total_price}.')
+            self.total_price = solution_response['total_price'] + \
+                           solution_response['total_battery_price'] + \
+                           solution_response['total_inverter_price']
+            logger.info(f'Calculating final price using composotion rule. Total price: {self.total_price}.')
 
-        if not panel_pk:
-            redirect(reverse('index'))
+            if not panel_pk:
+                redirect(reverse('index'))
 
-        context.update({'panel': panel})
+            context.update({'panel': panel})
 
-        context.update({'battery': battery})
-        context.update({'inverter': inverter})
+            context.update({'battery': battery})
+            context.update({'inverter': inverter})
 
-        context.update({
-            'total_price': "{:0.2f}".format(self.total_price),
-            'total_watt': "{:0.3f}".format(solution_response['total_watts'] / 1000),
-            'total_panels': solution_response['panel_amount'],
-            'battery_amount': solution_response['battery_amount'],
-            'inverter_amount': solution_response['inverter_amount'],
-            'total_weight': "{:0.3f}".format(solution_response['total_weight'] / 1000),
-            'total_area': "{:0.2f}".format(solution_response['total_area'] / 10000),
-            'cost_per_watt': "{:0.2f}".format(solution_response['cost_per_watt']),
-            'cost_per_hour': "{:0.2f}".format(solution_response['cost_per_hour'])
-        })
-        logger.info(f'Presentation: Displaying results to user.')
-        #except Error as e:
-        #    print(e)
-        #    context.update({'not_found': True})
-        #    return context
+            context.update({
+                'total_price': "{:0.2f}".format(self.total_price),
+                'total_watt': "{:0.3f}".format(solution_response['total_watts'] / 1000),
+                'total_panels': solution_response['panel_amount'],
+                'battery_amount': solution_response['battery_amount'],
+                'inverter_amount': solution_response['inverter_amount'],
+                'total_weight': "{:0.3f}".format(solution_response['total_weight'] / 1000),
+                'total_area': "{:0.2f}".format(solution_response['total_area'] / 10000),
+                'cost_per_watt': "{:0.2f}".format(solution_response['cost_per_watt']),
+                'cost_per_hour': "{:0.2f}".format(solution_response['cost_per_hour'])
+            })
+            logger.info(f'Presentation: Displaying results to user.')
+        except:
+            context.update({'not_found': True})
+            return context
 
         return context
 
