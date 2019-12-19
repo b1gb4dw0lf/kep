@@ -232,7 +232,7 @@ def get_choosen_panel(max_budget, electricity, materials):
 
     logger.info(f'Selecting solar panel using cheapest price criterium from total {SolarPanel.objects.count()} choices.')
     for p in SolarPanel.objects.filter(material__in=materials):
-        panel_amount = round(electricity / p.watts)
+        panel_amount = math.ceil(electricity / p.watts)
         panel_watts = panel_amount * p.watts
         panels_price = panel_amount * p.price
 
@@ -299,7 +299,7 @@ def get_chosen_inverter(max_budget, electricity):
 
     logger.info(f'Selecting inverter using cheapest price criterium from total {Inverter.objects.count()} choices.')
     for p in Inverter.objects.all():
-        inverter_amount = round(electricity / p.watts)
+        inverter_amount = math.ceil(electricity / p.watts)
         inverter_watts = inverter_amount * p.watts
         inverters_price = inverter_amount * p.price
 
@@ -312,9 +312,9 @@ def get_chosen_inverter(max_budget, electricity):
     # fallback
     if not inverter:
         logger.info(f'Inverter optimal solution not found. Using fallback.')
-        inverter = p
-        total_price = inverters_price
-        total_inverters = inverter_amount
+        inverter = Inverter.objects.order_by('price').first()
+        total_price = inverter.price
+        total_inverters = 1
 
     return {
         'inverter_pk': inverter.pk,
@@ -346,7 +346,7 @@ def get_chosen_battery(max_budget, electricity):
         f'Selecting battery using cheapest price criterium from total {Battery.objects.count()} choices.')
     for p in Battery.objects.all():
         p_watts = p.voltage * p.amper_hours
-        battery_amount = round(electricity / p_watts)
+        battery_amount = math.ceil(electricity / p_watts)
         battery_watts = battery_amount * p_watts
         batterys_price = battery_amount * p.price
 
@@ -359,9 +359,9 @@ def get_chosen_battery(max_budget, electricity):
     # fallback
     if not battery:
         logger.info(f'Battery optimal solution not found. Using fallback.')
-        battery = Battery.objects.sorted_by('price').first()
-        total_price = batterys_price
-        total_batterys = battery_amount
+        battery = Battery.objects.order_by('price').first()
+        total_price = battery.price
+        total_batterys = 1
 
     return {
         'battery_pk': battery.pk,
