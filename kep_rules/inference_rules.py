@@ -101,10 +101,11 @@ class Rules:
 
             @when_all(+m.country)
             def country_watt_per_metre2(c):
+                self.response['watt_per_metre2'] = 3
                 if c.m.country == 'NL':
                     self.response['watt_per_metre2'] = 2.6
-                    logger.info('Watt per metre square for {} is {} kW'
-                                .format(c.m.country, self.response['watt_per_metre2']))
+                logger.info('Watt per metre square for {} is {} kW'
+                            .format(c.m.country, self.response['watt_per_metre2']))
 
             @when_all(+m.land_area)
             def calculate_electricity(c):
